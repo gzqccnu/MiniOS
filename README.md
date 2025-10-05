@@ -1,3 +1,3 @@
 # MiniOS
 
-A scratch implement of OS kernel.
+A scratch implemention of OS kernel.
