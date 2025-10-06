@@ -1,4 +1,4 @@
-// console.c - 控制台和printk实现（针对 QEMU virt / 16550 串口）
+// uart.c - printk实现 (QEMU virt / 16550 串口)
 
 #include "types.h"
 #include "uart.h"
