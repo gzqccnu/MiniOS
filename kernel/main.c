@@ -1,7 +1,7 @@
 // main.c - 内核主函数
+
 #include "types.h"
-#include "uart.h"
-// 提前声明printk函数
+#include "uart.h"     // 声明的 printk 函数
 #include "color.h"
 
 // 内核主函数
