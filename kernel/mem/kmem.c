@@ -153,9 +153,6 @@ size_t get_total_memory(void) { return (size_t)mm.total_pages * PAGE_SIZE; }
  */
 size_t get_free_memory(void) { return (size_t)mm.free_pages * PAGE_SIZE; }
 
-/**
- * 打印内存统计信息（需要printk支持）
- */
 void print_memory_stats(void) {
   printk("\n========== 内存统计信息 ==========\n");
   printk("总页数:   %lu 页 (%lu byte)\n", mm.total_pages, (mm.total_pages * PAGE_SIZE));
