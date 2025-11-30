@@ -12,6 +12,7 @@ To run this project, you need to have belowings:
     
     > [!Warning]
     > git clone takes around 6.65 GB of disk and download size
+
     ##### Prerequisites
     - On **Ubuntu/debain**
     ```bash
@@ -27,7 +28,7 @@ To run this project, you need to have belowings:
     ```
     ##### Installation
     ```bash
-    git clone https://github.com/riscv/riscv-gnu-toolchain
+    git clone https://github.com/riscv/riscv-gnu-toolchain.git
     ./configure --prefix=/opt/riscv
     make -j$(nproc)
     echo 'export PATH="/opt/riscv/bin:$PATH"' >> ~/.bashrc
@@ -64,6 +65,7 @@ To run this project, you need to have belowings:
     
     > [!Tip]
     > If you install qemu from source, may you need a higher version of **glibc**. When I compile it, the version is **2.35** at least. Considering that **glibc** is a very import system dependency, I recommand to compile **qemu** in docker instead. You can see the fowlling **docker(optional)** part.
+
     ```bash
     git clone https://gitlab.com/qemu-project/qemu.git
     mkdir build
@@ -77,6 +79,7 @@ To run this project, you need to have belowings:
 
     > [!Important]
     > Ensure your OS has a higher version of **glibc** then continue reading the rest of the content
+
     Compiling steps
     ```bash
     git clone https://gitlab.com/qemu-project/qemu.git
