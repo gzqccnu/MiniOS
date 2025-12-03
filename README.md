@@ -105,8 +105,8 @@ To run this project, you need to have belowings:
     ```
     Additionally, you can compile and run the kernel for only selected units. For now, you can run:
     ```bash
-    make DIR="boot mem uart trap string"
-    make DIR="boot mem uart trap string" run
+    make DIR="boot uart trap string mem proc"
+    make DIR="boot uart trap string mem proc" run
     ```
 - **usr**
 TBA
