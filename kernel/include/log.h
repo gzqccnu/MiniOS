@@ -1,6 +1,6 @@
-#ifndef COLOR_H
-#define COLOR_H
-
+#ifndef _LOG_H
+#define _LOG_H
+#include "../uart/uart.h"
 // reset color
 #define RESET "\033[0m"
 
@@ -59,4 +59,4 @@
 #define WARNING(msg) printk(YELLOW "[WARNING]: \t%s" RESET "\n", msg)
 #define INFO(msg) printk(BLUE "[INFO]: \t%s" RESET "\n", msg)
 
-#endif // COLOR_TERMINAL_H
+#endif /* _LOG_H */

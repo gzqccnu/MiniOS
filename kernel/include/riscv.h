@@ -2,20 +2,32 @@
 #define _RISCV_H_
 #include <stdint.h>
 
-#define SSTATUS_SIE (1L << 1)
+#define MSTATUS_SIE (1UL << 3)
 
-static inline uint64_t csrr_sstatus() {
+static inline uint64_t csrr_mstatus() {
   uint64_t x;
-  asm volatile("csrr %0, sstatus" : "=r"(x));
+  asm volatile("csrr %0, mstatus" : "=r"(x));
   return x;
 }
 
-static inline void csrw_sstatus(uint64_t x) { asm volatile("csrw sstatus, %0" : : "r"(x)); }
+static inline void csrw_mstatus(uint64_t x) { asm volatile("csrw mstatus, %0" : : "r"(x)); }
 
-// enable device interrupts
-static inline void intr_on() { csrw_sstatus(csrr_sstatus() | SSTATUS_SIE); }
+// // enable device interrupts
+// static inline void intr_on() {
+//   csrw_mstatus(csrr_mstatus() | MSTATUS_SIE);
+// }
 
-// disable device interrupts
-static inline void intr_off() { csrw_sstatus(csrr_sstatus() & ~SSTATUS_SIE); }
+// // disable device interrupts
+// static inline void intr_off() {
+//   csrw_mstatus(csrr_mstatus() & ~MSTATUS_SIE);
+// }
+static inline void intr_on() {
+  unsigned long x = 1UL << 3; // MIE bit
+  asm volatile("csrs mstatus, %0" ::"r"(x));
+}
 
+static inline void intr_off() {
+  unsigned long x = 1UL << 3; // MIE bit
+  asm volatile("csrc mstatus, %0" ::"r"(x));
+}
 #endif /* _RISCV_H_ */
