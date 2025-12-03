@@ -2,12 +2,13 @@
 .global trap_vector_entry
 .type trap_vector_entry, @function
 
-/* 简单 trap 入口：保存少量寄存器，然后调用 C 函数 trap_handler_c */
+/* simple trap entry: save a few registers, then call the C function trap_handler_c */
 .align 2  ;
 trap_vector_entry:
-    addi sp, sp, -128        /* 分配栈帧（足够保存寄存器） */
+    /* Allocate stack frame (enough to save registers) */
+    addi sp, sp, -128
 
-    /* 保存 caller-saved / callee-saved 若需要打印寄存器 */
+    /* Save caller-saved / callee-saved registers if printing registers is needed */
     sd ra, 0(sp)
     sd t0, 8(sp)
     sd t1, 16(sp)
@@ -40,7 +41,5 @@ trap_vector_entry:
 
     addi sp, sp, 128
 
-    /* 在发生异常后我们通常不返回 mret（避免反复陷入），转入死循环 */
-1:
-    wfi
-    j 1b
+    /* return to the instruction pointed by mepc/mode via mret */
+    mret

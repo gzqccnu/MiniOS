@@ -3,77 +3,27 @@
 #include "../uart/uart.h"
 #include <stdint.h>
 
-/* 声明由汇编提供的入口 */
+/* Declare an entry provided by assembly */
 extern void trap_vector_entry(void);
 
-/* Helper: 读取 CSR */
-// static inline unsigned long read_csr(const char *name) {
-//     unsigned long val = 0;
-//     if (name == (const char *)"mcause") {
-//         asm volatile("csrr %0, mcause" : "=r"(val));
-//     } else if (name == (const char *)"mepc") {
-//         asm volatile("csrr %0, mepc" : "=r"(val));
-//     } else if (name == (const char *)"mtval") {
-//         asm volatile("csrr %0, mtval" : "=r"(val));
-//     } else if (name == (const char *)"mstatus") {
-//         asm volatile("csrr %0, mstatus" : "=r"(val));
-//     } else {
-//         val = 0;
-//     }
-//     return val;
-// }
+/* forward scheduler */
+extern void schedule(void);
 
-// /* 设置 mtvec 指向 trap_vector_entry（直接模式） */
-// void trap_init(void) {
-//     uintptr_t vec = (uintptr_t)trap_vector_entry;
-//     asm volatile("csrw mtvec, %0" :: "r"(vec));
-//     printk("[trap]: \tmtvec set to %p\n", (void*)vec);
-// }
+/* CLINT (QEMU virt) addresses for machine timer */
+#define CLINT_BASE 0x02000000UL
+#define CLINT_MTIME (CLINT_BASE + 0xBFF8)
+#define CLINT_MTIMECMP(hartid) (CLINT_BASE + 0x4000 + 8 * (hartid))
 
-// /* C-level trap handler called from assembly entry */
-// void trap_handler_c(void) {
-//     unsigned long cause, epc, tval, mstatus;
-//     asm volatile("csrr %0, mcause" : "=r"(cause));
-//     asm volatile("csrr %0, mepc" : "=r"(epc));
-//     asm volatile("csrr %0, mtval" : "=r"(tval));
-//     asm volatile("csrr %0, mstatus" : "=r"(mstatus));
+static void set_next_timer(uint64_t interval) {
+  volatile uint64_t *mtime = (uint64_t *)CLINT_MTIME;
+  volatile uint64_t *mtimecmp = (uint64_t *)CLINT_MTIMECMP(0);
+  uint64_t now = *mtime;
+  *mtimecmp = now + interval;
+}
 
-//     /* Print values */
-//     printk("\n[trap]: \tTRAP! mcause=0x%lx mepc=0x%lx mtval=0x%lx mstatus=0x%lx\n",
-//            cause, epc, tval, mstatus);
-
-//     /* Decode a few common causes (machine mode) */
-//     unsigned long code = cause & 0xFFF;      /* low bits hold exception code */
-//     if ((cause >> (sizeof(unsigned long)*8 - 1)) & 1) {
-//         /* interrupt */
-//         printk("[trap]: \tinterrupt (code=%lu)\n", code);
-//     } else {
-//         printk("[trap]: \texception (code=%lu)\n", code);
-//         switch (code) {
-//             case 0:  printk("[trap]: \tinstr addr misaligned\n"); break;
-//             case 1:  printk("[trap]: \tinstr access fault\n"); break;
-//             case 2:  printk("[trap]: \tillegal instruction\n"); break;
-//             case 3:  printk("[trap]: \tbreakpoint\n"); break;
-//             case 4:  printk("[trap]: \tload address misaligned\n"); break;
-//             case 5:  printk("[trap]: \tload access fault\n"); break;
-//             case 6:  printk("[trap]: \tstore/AMO address misaligned\n"); break;
-//             case 7:  printk("[trap]: \tstore/AMO access fault\n"); break;
-//             case 8:  printk("[trap]: \tenv call from U-mode\n"); break;
-//             case 9:  printk("[trap]: \tenv call from S-mode\n"); break;
-//             case 11: printk("[trap]: \tenv call from M-mode\n"); break;
-//             case 12: printk("[trap]: \tinstruction page fault\n"); break;  /* instruction page
-//             fault */ case 13: printk("[trap]: \tload page fault\n"); break;         /* load page
-//             fault */ case 15: printk("[trap]: \tstore/AMO page fault\n"); break;    /* store/AMO
-//             page fault */ default: printk("[trap]: \tunknown exception code=%lu\n", code); break;
-//         }
-//     }
-
-//     /* optionally spin so we can inspect */
-//     while (1) { asm volatile("wfi"); }
-// }
 extern void trap_vector_entry(void);
 
-/* 内联函数：读取RISC-V CSR寄存器（类型安全，避免字符串比较） */
+/* Inline function: read RISC-V CSR register (type-safe, avoids string comparison) */
 static inline uint64_t read_mcause(void) {
   uint64_t val;
   asm volatile("csrr %0, mcause" : "=r"(val));
@@ -98,39 +48,52 @@ static inline uint64_t read_mstatus(void) {
   return val;
 }
 
-/* 设置 mtvec 指向 trap_vector_entry（直接模式，确保4字节对齐） */
+/* Set mtvec to point to trap_vector_entry (direct mode, ensure 4-byte alignment) */
 void trap_init(void) {
-  // 确保基地址4字节对齐（直接模式要求低2位为0）
+  /* Ensure the base address is 4-byte aligned
+   * (direct mode requires the lowest 2 bits to be 0)
+   */
   uintptr_t vec = (uintptr_t)trap_vector_entry & ~0x3UL;
   asm volatile("csrw mtvec, %0" ::"r"(vec));
-  printk(MAGENTA "[trap]: \tmtvec initialized to 0x%lx (direct mode)\n" RESET, vec);
+  printk(MAGENTA "[trap]: \tmtvec initialized to 0x%x (direct mode)\n" RESET, vec);
+
+  /* enable machine-timer interrupt in MIE and global MIE in mstatus */
+  const unsigned long MTIE = (1UL << 7);
+  const unsigned long MIE_BIT = (1UL << 3);
+  asm volatile("csrs mie, %0" ::"r"(MTIE));
+  asm volatile("csrs mstatus, %0" ::"r"(MIE_BIT));
+
+  /* program first timer (small interval) */
+  set_next_timer(1000000ULL);
 }
 
-/* C-level trap handler：解析并打印trap信息（调试用） */
+/* C-level trap handler：parse and print trap info (debug) */
 void trap_handler_c(void) {
   uint64_t cause = read_mcause();
   uint64_t epc = read_mepc();
   uint64_t tval = read_mtval();
   uint64_t mstatus = read_mstatus();
 
-  // 解析中断/异常标志（mcause最高位：1=中断，0=异常）
+  /* Interrupt/Exception Cause Flag
+   * (mcause most significant bit: 1 = interrupt, 0 = exception)
+   */
   int is_interrupt = (cause >> (sizeof(uint64_t) * 8 - 1)) & 1;
-  // 解析完整代码（清除最高位标志）
+  // Parse complete code (clear the highest bit flag)
   uint64_t code = cause & ~(1UL << (sizeof(uint64_t) * 8 - 1));
 
-  // 打印基本信息
+  // print basic info
   printk(RED "[trap]: \t==== TRAP OCCURRED ====\n" RESET);
-  printk(RED "[trap]: \ttype: %s (code=0x%lx)\n" RESET, is_interrupt ? "interrupt" : "exception",
+  printk(RED "[trap]: \ttype: %s (code=0x%x)\n" RESET, is_interrupt ? "interrupt" : "exception",
          code);
-  printk(RED "[trap]: \tmepc: 0x%lx (instruction address when trap occurred)\n" RESET, epc);
+  printk(RED "[trap]: \tmepc: 0x%x (instruction address when trap occurred)\n" RESET, epc);
   printk(
       RED
-      "[trap]: \tmtval: 0x%lx (exception-related value (e.g., fault address/instruction))\n" RESET,
+      "[trap]: \tmtval: 0x%x (exception-related value (e.g., fault address/instruction))\n" RESET,
       tval);
-  printk(RED "[trap]: \tmstatus: 0x%lx (status register)\n" RESET, mstatus);
+  printk(RED "[trap]: \tmstatus: 0x%x (status register)\n" RESET, mstatus);
   // Detailed exception type parsing (RISC-V standard exception codes)
 
-  // 详细解析异常类型（RISC-V标准异常代码）
+  // Detailed analysis of exception types (RISC-V standard exception codes)
   if (!is_interrupt) {
     printk(RED "[trap]: \texception detail: " RESET);
     switch (code) {
@@ -177,7 +140,7 @@ void trap_handler_c(void) {
       printk(RED "store/AMO page fault\n" RESET);
       break;
     default:
-      printk(RED "unknown exception (code=0x%lx)\n" RESET, code);
+      printk(RED "unknown exception (code=0x%x)\n" RESET, code);
       break;
     }
   } else {
@@ -188,18 +151,23 @@ void trap_handler_c(void) {
       break;
     case 7:
       printk(RED "machine timer interrupt\n" RESET);
+      /* reprogram the timer for the next tick */
+      set_next_timer(1000000ULL);
+      /* invoke scheduler to perform context switch */
+      schedule();
+      return; /* after schedule and switch, return to trap entry which will mret */
       break;
     case 11:
       printk(RED "machine external interrupt\n" RESET);
       break;
     default:
-      printk(RED "unknown interrupt, code=0x%lx\n" RESET, code);
+      printk(RED "unknown interrupt, code=0x%x\n" RESET, code);
       break;
     }
   }
-  // 调试用：陷入后暂停（避免反复触发）
+  // Debugging: pause after getting stuck (to avoid repeated triggers)调试用：陷入后暂停（避免反复触发）
   printk(RED "[trap]: \tentering infinite loop...\n" RESET);
   while (1) {
-    asm volatile("wfi"); // 等待中断（降低CPU占用）
+    asm volatile("wfi"); // Waiting for interrupt (reduces CPU usage)
   }
 }
