@@ -1,4 +1,4 @@
-// uart.c - printk实现 (QEMU virt / 16550 串口)
+// uart.c - printk implementation (QEMU virt / 16550 UART)
 
 #include "uart.h"
 #include "../include/log.h"
@@ -17,12 +17,12 @@
 #define UART_DLL (UART_BASE + 0x00) // Divisor Latch Low (when LCR[7]=1)
 #define UART_DLM (UART_BASE + 0x01) // Divisor Latch High (when LCR[7]=1)
 
-// 等待并写入字符到 THR
+// Wait and write character to THR
 static void uart_putc(char c) {
   volatile unsigned char *lsr = (volatile unsigned char *)UART_LSR;
   volatile unsigned char *thr = (volatile unsigned char *)UART_THR;
 
-  // 等待 THR 可写：LSR 的 bit5 (0x20) = Transmitter Holding Register Empty
+  // Wait for THR to be writable: LSR's bit5 (0x20) = Transmitter Holding Register Empty
   while (!(*lsr & 0x20)) {
     // busy-wait
   }
@@ -30,7 +30,7 @@ static void uart_putc(char c) {
   *thr = (unsigned char)c;
 }
 
-// 读取字符（非阻塞/简单实现）
+// Read character (non-blocking/simple implementation)
 static char uart_getc(void) {
   volatile unsigned char *rbr = (volatile unsigned char *)UART_RBR;
   volatile unsigned char *lsr = (volatile unsigned char *)UART_LSR;
@@ -41,19 +41,19 @@ static char uart_getc(void) {
   return 0;
 }
 
-// 初始化 uart：设置 8N1（不强制设置波特，使用 QEMU 默认）
+// Initialize uart: set to 8N1 (don't force baud rate, use QEMU default)
 void uart_init(void) {
   volatile unsigned char *lcr = (volatile unsigned char *)UART_LCR;
-  // 设置 8 bits, no parity, 1 stop (0x03)
+  // Set 8 bits, no parity, 1 stop (0x03)
   *lcr = 0x03;
   INFO("waiting for uart init...");
   SUCCESS("uart init success");
-  // 不强行设置 DLL/DLM（QEMU 默认 115200），如果需要特定波特率，可：
-  // - 设置 LCR 的 DLAB 位（bit7）=1，然后写 DLL/DLM
-  // 这里保持简单：不修改波特
+  // Don't forcibly set DLL/DLM (QEMU default is 115200). If a specific baud rate is needed, you can:
+  // - Set the DLAB bit of LCR (bit7) to 1, then write DLL/DLM
+  // Keep it simple here: don't modify baud rate
 }
 
-// 简单字符串输出，遇到 '\n' 输出 "\r\n"
+// Simple string output, output "\r\n" when encountering '\n'
 void puts(const char *s) {
   while (*s) {
     if (*s == '\n') {
@@ -70,7 +70,7 @@ void gets(const char *s) {
     }
   }
 }
-// 简单的printk实现 (支持 %d %s %x %c)
+// Simple printk implementation (supports %d %s %x %c)
 void printk(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -118,28 +118,28 @@ void printk(const char *fmt, ...) {
       break;
     }
     case 'p': {
-      // 为指针地址添加 "0x" 前缀，这是标准做法
+      // Add "0x" prefix for pointer address, this is standard practice
       *p++ = '0';
       *p++ = 'x';
 
-      // 将指针作为 uintptr_t (一种足够大的无符号整数) 来处理
-      // 然后像处理 '%x' 一样打印它
+      // Treat the pointer as uintptr_t (an unsigned integer large enough to hold a pointer)
+      // then print it like handling '%x'
       uintptr_t num = va_arg(args, uintptr_t);
 
-      // 使用足够大的缓冲区来处理 32位 或 64位 地址
+      // Use a buffer large enough to handle 32-bit or 64-bit addresses
       char hex_buf[sizeof(uintptr_t) * 2 + 1];
       hex_buf[sizeof(uintptr_t) * 2] = '\0';
 
-      // 从后往前填充缓冲区
+      // Fill the buffer from the end
       for (int i = sizeof(uintptr_t) * 2 - 1; i >= 0; --i) {
         int d = num & 0xF;
         hex_buf[i] = d < 10 ? '0' + d : 'a' + d - 10;
         num >>= 4;
       }
 
-      // 将结果复制到主缓冲区，可以跳过前导零，但对于地址通常会全部显示
+      // Copy the result to the main buffer, can skip leading zeros, but for addresses, it's common to display all of them
       char *h = hex_buf;
-      // while (*h == '0' && *(h+1)) h++; // 对于地址，我们通常希望看到完整的长度
+      // while (*h == '0' && *(h+1)) h++; // For addresses, we usually want to see the full length
       while (*h)
         *p++ = *h++;
       break;
@@ -162,10 +162,10 @@ void printk(const char *fmt, ...) {
       break;
     }
     case 'l': {
-      if (*fmt == 'u') { // 检查是否是 "lu"
-        fmt++;           // 跳过 'u'
+      if (*fmt == 'u') { // Check if it is "lu"
+        fmt++;           // Skip 'u'
 
-        // [关键修复] 使用 unsigned long 来获取参数
+        // [Key Fix] use unsigned long to get the argument
         unsigned long num = va_arg(args, unsigned long);
 
         if (num == 0) {
@@ -173,7 +173,7 @@ void printk(const char *fmt, ...) {
           break;
         }
 
-        char num_buf[21]; // 64位无符号整数最多20位数字 + null
+        char num_buf[21]; // 64-bit unsigned integer has at most 20 digits + null
         char *n = num_buf;
         while (num > 0) {
           *n++ = '0' + (num % 10);
@@ -185,8 +185,8 @@ void printk(const char *fmt, ...) {
       }
       break;
     }
-      // 专门处理 long 类型
 
+    // Handle long type specifically
     case 'c': {
       char ch = (char)va_arg(args, int);
       *p++ = ch;
