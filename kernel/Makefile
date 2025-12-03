@@ -9,7 +9,7 @@ OBJCOPY  := riscv64-unknown-elf-objcopy
 
 # ---------- Directories ----------
 # all directory（default）
-ALL_SRC_DIRS := boot uart fs proc trap mem_test 
+ALL_SRC_DIRS := boot trap uart string proc mem  
 # compilation output directory
 BUILD_DIR ?= build
 # use 
