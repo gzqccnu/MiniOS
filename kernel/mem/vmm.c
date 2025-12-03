@@ -2,14 +2,15 @@
 #include "../include/log.h"
 #include "../string/string.h"
 
-
 #define ENTRIES_PER_TABLE 1024
 #define PDE_INDEX(addr) (((uint32_t)(addr) >> 22) & 0x3FF)
 #define PTE_INDEX(addr) (((uint32_t)(addr) >> 12) & 0x3FF)
 #define PAGE_OFFSET(addr) ((uint32_t)(addr)&0xFFF)
 
-static vmm_pde_t *kernel_pd = NULL; /* 内核页目录的虚拟地址（可被内核访问） */
-static uint32_t kernel_pd_phys = 0; /* 内核页目录对应的物理地址 */
+/* Virtual address of the kernel page address (accessible by the kernel) */
+static vmm_pde_t *kernel_pd = NULL;
+/* Physical address of the kernel page address */
+static uint32_t kernel_pd_phys = 0;
 
 static void page_zero(void *p) {
   uint8_t *b = (uint8_t *)p;
@@ -17,14 +18,15 @@ static void page_zero(void *p) {
     b[i] = 0;
 }
 
-extern void arch_set_cr3(uint32_t pd_phys); /* 将 CR3 设为 pd_phys */
-extern void arch_enable_paging(void);       /* 设置 CR0 PG 位以启用分页 */
+/* set CR3 to pd_phys */
+extern void arch_set_cr3(uint32_t pd_phys);
+/* set CR0 PG "bit to enable paging */
+extern void arch_enable_paging(void);
 
 void arch_set_cr3(uint32_t pd_phys) { (void)pd_phys; }
-void arch_enable_paging(void) {
-}
+void arch_enable_paging(void) {}
 
-/* 返回一个新分配并已清零的页（作为页表或页目录页）*/
+/* Return a newly allocated and zeroed page (as a page table or page directory page) */
 static void *alloc_page_table_page(void) {
   void *p = kalloc();
   if (!p)
@@ -33,18 +35,18 @@ static void *alloc_page_table_page(void) {
   return p;
 }
 
-/* 将物理地址封装成 PDE/PTE 值（低 12 位为标志） */
+/* Package the physical address into a PDE/PTE value (lower 12 bits are flags) */
 static inline vmm_pde_t make_entry(uint32_t paddr, uint32_t flags) {
   return (vmm_pde_t)((paddr & 0xFFFFF000u) | (flags & 0xFFFu));
 }
 
-/* 从一个页表（虚拟地址 pointer）获取其物理地址：
-*/
-static uint32_t virt_to_phys(void *v) {
-  return (uint32_t)v;
-}
+/* Get the physical address from a page table (virtual address pointer): */
+static uint32_t virt_to_phys(void *v) { return (uint32_t)v; }
 
-/* 获取或创建页表：若不存在则分配一页并放入页目录 */
+/* Get or create a page table: if it does not exist
+ * allocate a page and insert it into the page directory
+ *
+ */
 static vmm_pte_t *get_or_create_pte_table(uint32_t vaddr, int *created) {
   uint32_t pde_idx = PDE_INDEX(vaddr);
   vmm_pde_t pde = kernel_pd[pde_idx];
@@ -66,7 +68,9 @@ static vmm_pte_t *get_or_create_pte_table(uint32_t vaddr, int *created) {
   }
 }
 
-/* 获取已存在的页表（不创建），若不存在返回 NULL */
+/* Get an existing page table (do not create)
+ * return NULL if it does not exist
+ */
 static vmm_pte_t *get_pte_table(uint32_t vaddr) {
   uint32_t pde_idx = PDE_INDEX(vaddr);
   vmm_pde_t pde = kernel_pd[pde_idx];
@@ -76,13 +80,13 @@ static vmm_pte_t *get_pte_table(uint32_t vaddr) {
   return (vmm_pte_t *)(uintptr_t)pt_phys;
 }
 
-/* 初始化 VMM：分配并清零内核页目录 */
+/* Initialize VMM: allocate and zero out the kernel page directory */
 void vmm_init(void) {
   INFO("vmm: initialize");
   if (kernel_pd)
-    return; /* 已初始化 */
+    return;      // already initialized
 
-  /* 分配页目录页 */
+  /* allocate kernel page directory */
   void *pd_page = alloc_page_table_page();
   if (!pd_page) {
     ERROR("vmm: failed to allocate page directory");
@@ -94,17 +98,17 @@ void vmm_init(void) {
   printk("vmm: page directory created at virt=%p phys=0x%x\n", kernel_pd, kernel_pd_phys);
 }
 
-/* 返回当前页目录虚拟地址 */
+/* Return the virtual address of the current page directory */
 vmm_pde_t *vmm_get_page_directory(void) { return kernel_pd; }
 void vmm_set_page_directory(vmm_pde_t *pd) {
   kernel_pd = pd;
   kernel_pd_phys = virt_to_phys(pd);
 }
 
-/* 返回页目录对应的物理地址 */
+/* Return the physical address corresponding to the page directory */
 uint32_t vmm_get_pd_phys(void) { return kernel_pd_phys; }
 
-/* 激活当前页目录到硬件 */
+/* Activate the current page directory in the hardware */
 void vmm_activate(void) {
   if (!kernel_pd)
     return;
@@ -112,7 +116,7 @@ void vmm_activate(void) {
   arch_enable_paging();
 }
 
-/* 将物理地址 paddr（必须页对齐）映射到虚拟地址 vaddr */
+/* Map the physical address paddr (must be page-aligned) to the virtual address vaddr */
 int vmm_map(void *vaddr, void *paddr, uint32_t flags) {
   if (!kernel_pd)
     return -1;
@@ -120,7 +124,7 @@ int vmm_map(void *vaddr, void *paddr, uint32_t flags) {
   uint32_t pa = (uint32_t)paddr;
 
   if ((va & (VMM_PAGE_SIZE - 1)) || (pa & (VMM_PAGE_SIZE - 1))) {
-    return -1; /* 需要页对齐 */
+    return -1; /* Requires page alignment */
   }
 
   int created = 0;
@@ -134,7 +138,7 @@ int vmm_map(void *vaddr, void *paddr, uint32_t flags) {
   return 0;
 }
 
-/* 为 vaddr 分配物理页并映射（flags 同上） */
+/* Allocate a physical page for vaddr and map it (same flags as above) */
 int vmm_map_page(void *vaddr, uint32_t flags) {
   void *phys = kalloc();
   if (!phys)
@@ -147,7 +151,9 @@ int vmm_map_page(void *vaddr, uint32_t flags) {
   return 0;
 }
 
-/* 解除映射：若 free_phys 非 0 则把物理页释放回 kfree（仅当 PTE 存在且 present） */
+/* Unmap: if free_phys is not 0, free the physical page back to kfree
+ * (only if PTE exists and is present)
+ */
 int vmm_unmap(void *vaddr, int free_phys) {
   if (!kernel_pd)
     return -1;
@@ -157,7 +163,7 @@ int vmm_unmap(void *vaddr, int free_phys) {
 
   vmm_pte_t *pt = get_pte_table(va);
   if (!pt)
-    return -1; /* 未映射 */
+    return -1; /* Unmapped */
 
   uint32_t pte_idx = PTE_INDEX(va);
   vmm_pte_t pte = pt[pte_idx];
@@ -171,12 +177,15 @@ int vmm_unmap(void *vaddr, int free_phys) {
     kfree((void *)(uintptr_t)phys_page);
   }
 
-  /* 若页表已完全空，可以选择释放该页表页并清除 PDE（本实现不自动释放页表页） */
+  /* If the page table is completely empty, you can choose to release the page table
+     page and clear the PDE
+     (this implementation does not automatically release page table pages)
+   */
 
   return 0;
 }
 
-/* 翻译虚拟地址到物理地址；返回指向物理地址的指针（或 NULL） */
+/* Translate virtual address to physical address; return a pointer to the physical address (or NULL) */
 void *vmm_translate(void *vaddr) {
   if (!kernel_pd)
     return NULL;
