@@ -1,19 +1,19 @@
-/* linker.ld - RISC-V内核链接器脚本*/
+/* linker.ld - RISC-V Kernel Linker Script */
 
 ENTRY(_start)
 
-/* 定义内存布局常量 */
+/* Define memory layout constants */
 MEMORY {
-    /* QEMU virt 机器默认有 128MB RAM */
+    /* QEMU virt machine has 128MB RAM by default */
     RAM (rwx) : ORIGIN = 0x80000000, LENGTH = 128M
 }
 
-/* 定义栈和堆的大小 */
-STACK_SIZE = 8K;      /* 8KB 栈 */
-HEAP_SIZE = 16M;       /* 1MB 堆 - 根据需要调整 */
+/* define size of stack and heap */
+STACK_SIZE = 8K;      /* 8KB memory of stack */
+HEAP_SIZE = 16M;       /* 1MB heap - adjust as needed */
 
 SECTIONS {
-    /* 内核代码和数据从 RAM 的起始位置开始 */
+    /* kernel code and data start from the beginning of RAM */
     . = ORIGIN(RAM);
 
     .text : {
@@ -29,9 +29,9 @@ SECTIONS {
         *(.data .data.*)
     } > RAM
 
-    /* .bss 节，内核的未初始化数据 */
+    /* .bss section, uninitialized data of the kernel */
     .bss : {
-        /* 对齐到 8 字节边界 */
+       /* Align to 8-byte boundary */
         . = ALIGN(8);
         _bss_start = .;
         *(.bss .bss.*)
@@ -40,20 +40,20 @@ SECTIONS {
         _bss_end = .;
     } > RAM
 
-    /*
-     * 堆的定义:
-     * 堆在 .bss 节之后，大小固定为 HEAP_SIZE
-     */
-    . = ALIGN(0x1000);  /* 确保堆起始地址对齐 */
+   /*
+    * Definition of the heap:
+    * The heap is located after the .bss section and has a fixed size of HEAP_SIZE
+    */
+    . = ALIGN(0x1000); /* ensure heap start address alignment */
     _heap_start = .;
     . = . + HEAP_SIZE;
     . = ALIGN(0x1000);
     _heap_end = .;
 
     /*
-     * 栈的定义:
-     * 栈在堆之后，向上增长（或者你可以改为向下增长）
-     */
+    * Definition of a stack:
+    * The stack follows the heap and grows upwards (or you can change it to grow downwards)
+    */
     . = ALIGN(16);
     _stack_bottom = .;
     . = . + STACK_SIZE;
