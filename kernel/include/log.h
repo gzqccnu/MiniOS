@@ -5,13 +5,13 @@
 #define RESET "\033[0m"
 
 // text format
-#define BOLD "\033[1m"      // 粗体
-#define FAINT "\033[2m"     //  faint（弱化）
-#define ITALIC "\033[3m"    // 斜体
-#define UNDERLINE "\033[4m" // 下划线
-#define BLINK "\033[5m"     // 闪烁
-#define REVERSE "\033[7m"   // 反显（前景色与背景色交换）
-#define HIDDEN "\033[8m"    // 隐藏
+#define BOLD "\033[1m"      // bold
+#define FAINT "\033[2m"     //  faint
+#define ITALIC "\033[3m"    // italic
+#define UNDERLINE "\033[4m" // underline
+#define BLINK "\033[5m"     // blink
+#define REVERSE "\033[7m"   // reverse
+#define HIDDEN "\033[8m"    // hidden
 
 // color of text（foreground color）
 #define BLACK "\033[30m"
