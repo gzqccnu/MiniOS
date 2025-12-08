@@ -82,7 +82,7 @@ To run this project, you need to have belowings:
 
     Compiling steps
     ```bash
-    git clone https://gitlab.com/qemu-project/qemu.git
+    git clone https://github.com/qemu/qemu.git
     mkdir build
     cd build
     ../configure
