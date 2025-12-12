@@ -92,7 +92,7 @@ To run this project, you need to have belowings:
 ### Run
 - Clone this repo
     ```bash
-    git clone https://github.com/gzqccnu/MiniOS.git
+    git clone https://github.com/lrisguan/MiniOS.git
     cd Minios
     ```
 - **kernel**
