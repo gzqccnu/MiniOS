@@ -54,7 +54,7 @@ switch_context:
     ld x8, 32(a1)   # s0/fp
     ld x9, 40(a1)   # s1
 
-    # Note: skip x10 (a0) 和 x11 (a1), finally recover them
+    # Note: skip x10 (a0) and x11 (a1), finally restore them
 
     ld x12,64(a1)   # a2
     ld x13,72(a1)   # a3
