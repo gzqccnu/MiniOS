@@ -3,7 +3,7 @@
 #ifndef _PROC_H_
 #define _PROC_H_
 
-#include "types.h"
+#include "../include/types.h"
 #include <stddef.h>
 
 // process state
@@ -20,6 +20,9 @@ struct ProcessControlBlock {
   int prior;            // priority (lower = higher priority)
   uint64_t entrypoint;  // entry point (instruction address)
   uint64_t stacktop;    // stack top virtual address
+  int ppid;             // parent pid (0 for kernel/init)
+  void *brk_base;       // program break base (heap)
+  uint64_t brk_size;    // allocated heap size in bytes
   uint64_t cpu_time;    // cpu consumed time
   uint64_t remain_time; // remaining time slice
   uint64_t arriv_time;  // arrival time
@@ -45,6 +48,13 @@ void proc_exit(void);
 void scheduler_init(void);
 void schedule(void);
 PCB *get_current_proc(void);
+/* fork current process: return child's pid, or -1 on error */
+PCB *proc_fork(uint64_t mepc);
+/* wait for a child in zombie list and reap it; return pid or -1 if none */
+int proc_wait_and_reap(void);
+
+// debug: dump all processes and their states
+void proc_dump(void);
 
 extern procqueue *ready_queue;
 extern PCB *current_proc;
