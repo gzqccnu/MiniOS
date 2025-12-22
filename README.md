@@ -128,3 +128,5 @@ dd if=/dev/zero of=kernel/disk.img bs=1K count=64
 make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 ```
 
+## Reference
+When implementing this project, I refer to *[xv6-riscv](https://github.com/mit-pdos/xv6-riscv)*
