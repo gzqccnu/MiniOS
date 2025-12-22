@@ -1,13 +1,13 @@
-# start.S - RISC-V内核启动代码
+# start.S - RISC-V kernel bootstrap code
 
 .section .text.init
 .global _start
 
 _start:
-    # 设置栈指针
+    # Set stack pointer
     la sp, _stack_top
 
-    # 清零BSS段
+    # Zero out the BSS section
     la a0, _bss_start
     la a1, _bss_end
     bgeu a0, a1, bss_done
@@ -18,7 +18,7 @@ bss_loop:
     bltu a0, a1, bss_loop
 
 bss_done:
-    # 跳转到C主函数
+    # Jump to C main function
     call kmain
 loop:
     j loop
