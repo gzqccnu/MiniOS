@@ -14,15 +14,19 @@ extern void forkret(void);
 PCB *idle_proc = NULL; // global Idle process pointer
 procqueue *ready_queue = NULL;
 PCB *current_proc = NULL;
-PCB *zombie_list = NULL; // zombie process
+PCB *zombie_list = NULL;  // zombie process
+PCB *blocked_list = NULL; // processes blocked waiting (e.g., wait())
 
+// Simplest PID allocation: monotonically increasing next_pid,
+// and try to decrement by one on process destruction to reuse the last PID.
 static int next_pid = 1;
 static RegState boot_ctx; // temporary context for boot / first switch
 
-// Idle 进程的入口函数
+// Entry function of the idle process
 void idle_entry(void) {
   // 1. Make sure interrupts are enabled (MIE=1).
-  // Although they should already be enabled when forkret or schedule returns, explicitly enable them just to be safe.
+  // Although they should already be enabled when forkret or schedule returns, explicitly enable
+  // them just to be safe.
   // 2. Execute wfi to wait for an interrupt.
   while (1) {
     // enable interrupt
@@ -30,8 +34,9 @@ void idle_entry(void) {
 
     // Wait for Interrupt (WFI)
     // The CPU will pause here until a timer interrupt occurs.
-    // When the timer interrupt occurs -> trap_handler -> schedule -> check if there is a new process
-    // If there is no new process -> schedule selects idle again -> switch_context returns here -> continue the loop
+    // When the timer interrupt occurs -> trap_handler -> schedule -> check if there is a new
+    // process If there is no new process -> schedule selects idle again -> switch_context returns
+    // here -> continue the loop
     asm volatile("wfi");
   }
 }
@@ -82,6 +87,9 @@ PCB *proc_create(const char *name, uint64_t entrypoint, int prior) {
   pcb->pstat = READY;
   pcb->prior = prior;
   pcb->entrypoint = entrypoint;
+  pcb->ppid = 0;
+  pcb->brk_base = NULL;
+  pcb->brk_size = 0;
   // copy name
   int i;
   for (i = 0; i < 19 && name && name[i]; i++)
@@ -104,8 +112,8 @@ PCB *proc_create(const char *name, uint64_t entrypoint, int prior) {
   pcb->regstat.sp = pcb->stacktop;
 
   uint64_t mstatus_val = 0;
-  mstatus_val |= (3ULL << 11);         // Set MPP to Machine Mode
-  mstatus_val |= (1ULL << 7);          // Set MPIE to 1
+  mstatus_val |= (3ULL << 11); // Set MPP to Machine Mode
+  mstatus_val |= (1ULL << 7);  // Set MPIE to 1
   pcb->regstat.mstatus = mstatus_val;
 
   enqueue(ready_queue, pcb);
@@ -118,7 +126,7 @@ void scheduler_init(void) {
     INFO("scheudler init...");
     ready_queue = init_procqueue();
 
-    // === create Idle 进程 ===
+    // === create idle process ===
     idle_proc = (PCB *)kalloc();
     if (!idle_proc)
       while (1)
@@ -160,6 +168,212 @@ void scheduler_init(void) {
 
 PCB *get_current_proc(void) { return current_proc; }
 
+/* Fork current process: duplicate PCB and stack.
+ * Returns pointer to child PCB on success, or NULL on failure.
+ * 'mepc' is the trap epc value (so child can continue after ecall).
+ */
+PCB *proc_fork(uint64_t mepc) {
+  intr_off();
+  PCB *parent = current_proc;
+  if (!parent) {
+    intr_on();
+    return NULL;
+  }
+
+  PCB *child = (PCB *)kalloc();
+  if (!child) {
+    intr_on();
+    return NULL;
+  }
+  memset(child, 0, sizeof(PCB));
+
+  /* assign pid */
+  child->pid = next_pid++;
+  child->pstat = READY;
+  child->prior = parent->prior;
+  child->entrypoint = parent->entrypoint;
+  /* copy name */
+  for (int i = 0; i < 19 && parent->name[i]; i++)
+    child->name[i] = parent->name[i];
+  child->name[19] = '\0';
+
+  /* copy regstat */
+  child->regstat = parent->regstat;
+
+  /* allocate stack for child and copy parent's stack content */
+  void *stk = kalloc();
+  if (!stk) {
+    kfree(child);
+    intr_on();
+    return NULL;
+  }
+  void *parent_stk_base = (void *)(parent->stacktop - PAGE_SIZE);
+  /* copy whole page */
+  uint8_t *ps = (uint8_t *)parent_stk_base;
+  uint8_t *cs = (uint8_t *)stk;
+  for (size_t i = 0; i < PAGE_SIZE; i++)
+    cs[i] = ps[i];
+
+  child->stacktop = (uint64_t)stk + PAGE_SIZE;
+
+  /* adjust child's sp relative to new stack */
+  uint64_t sp_offset = parent->stacktop - child->regstat.sp;
+  child->regstat.sp = child->stacktop - sp_offset;
+
+  /* child should return 0 from fork */
+  child->regstat.x10 = 0; /* a0 = 0 in child */
+
+  /* set child's sepc to return after ecall (mepc + 4) */
+  child->regstat.sepc = mepc + 4;
+
+  /* set mstatus similar to parent */
+  child->regstat.mstatus = parent->regstat.mstatus;
+
+  /* inherit parent relationship / heap info (shallow copy) */
+  child->ppid = parent->pid;
+  /* Deep-copy parent's heap (brk) if any */
+  if (parent->brk_base && parent->brk_size > 0) {
+    uint64_t pages = (parent->brk_size + PAGE_SIZE - 1) / PAGE_SIZE;
+    void *first = NULL;
+    for (uint64_t i = 0; i < pages; i++) {
+      void *pg = kalloc();
+      if (!pg) {
+        /* allocation failure: free any allocated pages so far */
+        void *q = first;
+        for (uint64_t j = 0; j < i && q; j++) {
+          void *tofree = q;
+          q = (void *)((uint8_t *)q + PAGE_SIZE);
+          kfree(tofree);
+        }
+        kfree(child);
+        intr_on();
+        return NULL;
+      }
+      if (!first)
+        first = pg;
+
+      /* copy content from parent's heap */
+      uint8_t *src = (uint8_t *)parent->brk_base + i * PAGE_SIZE;
+      uint8_t *dst = (uint8_t *)pg;
+      for (size_t k = 0; k < PAGE_SIZE; k++)
+        dst[k] = src[k];
+    }
+    child->brk_base = first;
+    child->brk_size = parent->brk_size;
+  } else {
+    child->brk_base = NULL;
+    child->brk_size = 0;
+  }
+
+  /* enqueue child */
+  enqueue(ready_queue, child);
+
+  intr_on();
+  return child;
+}
+
+// dump all processes for debugging / ps syscall
+void proc_dump(void) {
+  printk(BLUE "[proc]: \t==== process list ====" RESET "\n");
+
+  // current running process
+  if (current_proc) {
+    printk(BLUE "[proc]: \tcurrent pid=%d state=%d name=%s" RESET "\n", current_proc->pid,
+           current_proc->pstat, current_proc->name);
+  }
+
+  // idle process
+  if (idle_proc) {
+    printk(BLUE "[proc]: \tidle   pid=%d state=%d name=%s" RESET "\n", idle_proc->pid,
+           idle_proc->pstat, idle_proc->name);
+  }
+
+  // ready queue
+  PCB *p = ready_queue ? ready_queue->head : NULL;
+  while (p) {
+    printk(BLUE "[proc]: \tready  pid=%d state=%d name=%s" RESET "\n", p->pid, p->pstat, p->name);
+    p = p->next;
+  }
+
+  // blocked list
+  p = blocked_list;
+  while (p) {
+    printk(BLUE "[proc]: \tblocked pid=%d state=%d name=%s" RESET "\n", p->pid, p->pstat, p->name);
+    p = p->next;
+  }
+
+  // zombies
+  p = zombie_list;
+  while (p) {
+    printk(BLUE "[proc]: \tzombie pid=%d state=%d name=%s" RESET "\n", p->pid, p->pstat, p->name);
+    p = p->next;
+  }
+}
+
+/* Wait for a child in zombie_list; if found, reap and return pid, else -1 */
+int proc_wait_and_reap(void) {
+  if (!current_proc)
+    return -1;
+
+  while (1) {
+    intr_off();
+    int mypid = current_proc->pid;
+    PCB *prev = NULL;
+    PCB *cur = zombie_list;
+    while (cur) {
+      if (cur->ppid == mypid) {
+        /* remove from zombie_list */
+        if (prev)
+          prev->next = cur->next;
+        else
+          zombie_list = cur->next;
+
+        int childpid = cur->pid;
+
+        /* free child's stack */
+        printk(BLUE "[proc]: \tReaping child pid=%d: free stack" RESET "\n", childpid);
+        void *stk = (void *)(cur->stacktop - PAGE_SIZE);
+        kfree(stk);
+
+        /* free child's heap pages if any */
+        if (cur->brk_base && cur->brk_size > 0) {
+          printk(BLUE "[proc]: \tReaping child pid=%d: free heap (size=%llu)" RESET "\n", childpid,
+                 (unsigned long long)cur->brk_size);
+          uint64_t pages = (cur->brk_size + PAGE_SIZE - 1) / PAGE_SIZE;
+          for (uint64_t i = 0; i < pages; i++) {
+            void *pg = (void *)((uint8_t *)cur->brk_base + i * PAGE_SIZE);
+            kfree(pg);
+          }
+        }
+
+        /* free PCB */
+        printk(BLUE "[proc]: \tReaping child pid=%d: free PCB" RESET "\n", childpid);
+        kfree(cur);
+
+        // If we are reclaiming the last PID in the current sequence,
+        // decrement next_pid so it can be reused
+        if (childpid == next_pid - 1 && next_pid > 1)
+          next_pid--;
+
+        intr_on();
+        return childpid;
+      }
+      prev = cur;
+      cur = cur->next;
+    }
+
+    /* No child available: block current process and schedule others */
+    current_proc->pstat = BLOCKED;
+    /* push onto blocked_list */
+    current_proc->next = blocked_list;
+    blocked_list = current_proc;
+
+    /* context switch to another process */
+    schedule();
+    /* when we regain CPU, loop and check zombie_list again */
+  }
+}
+
 void proc_exit(void) {
   intr_off();
   if (!current_proc)
@@ -170,6 +384,29 @@ void proc_exit(void) {
   zombie_list = current_proc;
   printk(BLUE "[proc]: \tProcess %d exited, added to zombie list." RESET "\n", current_proc->pid);
 
+  /* If parent is blocked waiting (in blocked_list), wake it up */
+  int ppid = current_proc->ppid;
+  if (ppid != 0) {
+    PCB *prev = NULL;
+    PCB *cur = blocked_list;
+    while (cur) {
+      if (cur->pid == ppid) {
+        /* remove from blocked_list */
+        if (prev)
+          prev->next = cur->next;
+        else
+          blocked_list = cur->next;
+
+        /* wake up parent: set READY and enqueue */
+        cur->pstat = READY;
+        enqueue(ready_queue, cur);
+        break;
+      }
+      prev = cur;
+      cur = cur->next;
+    }
+  }
+
   schedule();
 
   while (1) {
@@ -179,36 +416,58 @@ void proc_exit(void) {
 
 // free zombie memory
 void zombies_free(void) {
-  // turn off interrupt to avoid break in while operating link list
-  intr_off();
+  // Only reap zombies whose parent will never call wait: current rule is ppid == 0,
+  // e.g. top-level user processes like the shell. Zombies with a real parent are
+  // still reaped via wait.
 
-  while (zombie_list != NULL) {
-    PCB *victim = zombie_list;
-    // remove from zombie link list
-    zombie_list = victim->next;
+  PCB *prev = NULL;
+  PCB *cur = zombie_list;
+  while (cur) {
+    PCB *next = cur->next;
 
-    // ensure the meomory will free is not current process
-    if (victim == current_proc) {
-      // will not occur
+    if (cur->ppid == 0) {
+      int pid = cur->pid;
+
+      // Detach from zombie_list
+      if (prev)
+        prev->next = next;
+      else
+        zombie_list = next;
+
+      // Free stack
+      printk(BLUE "[proc]: \tReaping orphan pid=%d: free stack" RESET "\n", pid);
+      void *stk = (void *)(cur->stacktop - PAGE_SIZE);
+      kfree(stk);
+
+      // Free heap
+      if (cur->brk_base && cur->brk_size > 0) {
+        printk(BLUE "[proc]: \tReaping orphan pid=%d: free heap (size=%llu)" RESET "\n", pid,
+               (unsigned long long)cur->brk_size);
+        uint64_t pages = (cur->brk_size + PAGE_SIZE - 1) / PAGE_SIZE;
+        for (uint64_t i = 0; i < pages; i++) {
+          void *pg = (void *)((uint8_t *)cur->brk_base + i * PAGE_SIZE);
+          kfree(pg);
+        }
+      }
+
+      // Free PCB
+      printk(BLUE "[proc]: \tReaping orphan pid=%d: free PCB" RESET "\n", pid);
+      kfree(cur);
+
+      // After reaping a top-level process (like shell), also try to decrement next_pid
+      // so later processes can reuse the PID
+      if (pid == next_pid - 1 && next_pid > 1)
+        next_pid--;
+
+      // cur has been freed; keep prev unchanged and continue from next
+      cur = next;
       continue;
     }
 
-    printk(BLUE "[proc]: \tReaping zombie pid=%d" RESET "\n", victim->pid);
-
-    // 1. free stack
-    // before: stacktop = stk + PAGE_SIZE
-    // so the address of allocated is stacktop - PAGE_SIZE
-    void *stk = (void *)(victim->stacktop - PAGE_SIZE);
-    kfree(stk);
-    printk(BLUE "[proc]: \tfree stack of zombie pid=%d" RESET "\n", victim->pid);
-
-    // 2. free PCB
-    kfree(victim);
-    printk(BLUE "[proc]: \tfree victim" RESET "\n");
+    // Zombies with a parent are left for wait() to handle
+    prev = cur;
+    cur = next;
   }
-
-  // whether to recover interrupt depends on the caller
-  // this function is called by `schedual`, and `schedual` will solve interrupts
 }
 
 void schedule(void) {
