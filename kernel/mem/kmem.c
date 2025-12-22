@@ -132,8 +132,8 @@ void kfree(void *addr) {
 }
 
 /**
-* Get total number of pages
-*/
+ * Get total number of pages
+ */
 uint32_t get_total_pages(void) { return mm.total_pages; }
 
 /**

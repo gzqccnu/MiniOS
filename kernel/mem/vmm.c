@@ -51,7 +51,7 @@ static vmm_pte_t *get_or_create_pte_table(uint32_t vaddr, int *created) {
   uint32_t pde_idx = PDE_INDEX(vaddr);
   vmm_pde_t pde = kernel_pd[pde_idx];
   if ((pde & VMM_P_PRESENT) == 0) {
-    /* 分配新的页表页 */
+    /* Allocate a new page table page */
     void *pt_page = alloc_page_table_page();
     if (!pt_page)
       return NULL;
@@ -84,7 +84,7 @@ static vmm_pte_t *get_pte_table(uint32_t vaddr) {
 void vmm_init(void) {
   INFO("vmm: initialize");
   if (kernel_pd)
-    return;      // already initialized
+    return; // already initialized
 
   /* allocate kernel page directory */
   void *pd_page = alloc_page_table_page();
@@ -95,7 +95,8 @@ void vmm_init(void) {
   kernel_pd = (vmm_pde_t *)pd_page;
   kernel_pd_phys = virt_to_phys(pd_page);
 
-  printk("vmm: page directory created at virt=%p phys=0x%x\n", kernel_pd, kernel_pd_phys);
+  printk(BLUE "[INFO]: \tvmm: page directory created at virt=%p phys=0x%x\n", kernel_pd,
+         kernel_pd_phys);
 }
 
 /* Return the virtual address of the current page directory */
@@ -185,7 +186,8 @@ int vmm_unmap(void *vaddr, int free_phys) {
   return 0;
 }
 
-/* Translate virtual address to physical address; return a pointer to the physical address (or NULL) */
+/* Translate virtual address to physical address; return a pointer to the physical address (or NULL)
+ */
 void *vmm_translate(void *vaddr) {
   if (!kernel_pd)
     return NULL;
