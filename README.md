@@ -89,27 +89,42 @@ To run this project, you need to have belowings:
     make -j$(nproc)
     sudo make install
     ```
-### Run
-- Clone this repo
-    ```bash
-    git clone https://github.com/lrisguan/MiniOS.git
-    cd Minios
-    ```
-- **kernel**
 
-    run kernel only
-    ```bash
-    cd kernel
-    make
-    make run
-    ```
-    Additionally, you can compile and run the kernel for only selected units. For now, you can run:
-    ```bash
-    make DIR="boot uart trap string mem proc"
-    make DIR="boot uart trap string mem proc" run
-    ```
-- **usr**
-TBA
-- **whole os**
-TBA
+### About
+Flags of [Makefile](./Makefile):
+### 1. MiniOS Top-Level Build Parameters
+| Variable Name | Description                                                                 |
+|---------------|-----------------------------------------------------------------------------|
+| KDIR          | Kernel directory, fixed value: `kernel`                                     |
+| UDIR          | User program directory, fixed value: `usr`                                  |
+| KIMG          | Kernel binary file path, fixed value: `kernel/build/kernel.bin`             |
+| FS_DEBUG      | File system debug log toggle:<br>0 = Disable; 1 = Enable (default 0)|
+| VIRTIO        | VirtIO mode selection:<br>1 = legacy; 2 = modern (default 1)             |
+| TRAP_DEBUG    | Trap debug:<br>0=disbale; 1=enable (default 0)                              |
+
+### 2. Common Build Commands
+| Command       | Description                                                               |
+|---------------|---------------------------------------------------------------------------|
+| make          | Equivalent to `make kernel`, builds kernel + user programs                |
+| make run      | Builds the OS image and starts it via QEMU                                |
+| make clean    | Cleans up output files generated during kernel build                      |
+| make info     | Displays this help info + kernel sub-Makefile details                     |
+
+### 3. Command Examples
+| Example Command                       | Description                                                     |
+|---------------------------------------|-----------------------------------------------------------------|
+| make FS_DEBUG=1 VIRTIO=1 run          | Enable file system debug logs, use legacy VirtIO mode           |
+| make FS_DEBUG=0 VIRTIO=2 run          | Disable file system debug logs, use modern VirtIO mode          |
+### Run
+> [!Warning]
+> To use flag `VIRTIO=2`, your qemu version needs to be higher than 5.
+```bash
+git clone https://github.com/lrisguan/MiniOS.git
+cd Minios
+# create disk file
+dd if=/dev/zero of=kernel/disk.img bs=1K count=64
+# execute `make info` to see the flags and help.
+# to run the kernel:
+make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
+```
 
