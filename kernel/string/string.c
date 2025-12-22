@@ -41,3 +41,36 @@ int memcmp(const void *s1, const void *s2, size_t n) {
   }
   return 0;
 }
+
+size_t strlen(const char *s) {
+  size_t n = 0;
+  if (!s)
+    return 0;
+  while (s[n])
+    n++;
+  return n;
+}
+
+int strcmp(const char *a, const char *b) {
+  if (!a || !b)
+    return (a == b) ? 0 : (a ? 1 : -1);
+  while (*a && (*a == *b)) {
+    a++;
+    b++;
+  }
+  return (int)((unsigned char)*a - (unsigned char)*b);
+}
+
+int strncmp(const char *a, const char *b, size_t n) {
+  if (n == 0)
+    return 0;
+  if (!a || !b)
+    return (a == b) ? 0 : (a ? 1 : -1);
+  while (n-- && *a && (*a == *b)) {
+    if (n == 0)
+      return 0;
+    a++;
+    b++;
+  }
+  return (int)((unsigned char)*a - (unsigned char)*b);
+}
