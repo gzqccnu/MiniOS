@@ -22,7 +22,8 @@ trap_vector_entry:
     sd a6, 80(sp)
     sd a7, 88(sp)
 
-    /* call C handler */
+    /* pass the pointer to saved registers (sp) in a0, then call C handler */
+    mv a0, sp
     call trap_handler_c
 
     /* restore registers */
