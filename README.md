@@ -132,5 +132,5 @@ make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 ./run.sh
 ```
 
-## Reference
+## *Reference*
 When implementing this project, I refer to *[xv6-riscv](https://github.com/mit-pdos/xv6-riscv)*
