@@ -134,3 +134,6 @@ make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 
 ## *Reference*
 When implementing this project, I refer to *[xv6-riscv](https://github.com/mit-pdos/xv6-riscv)*
+
+## License
+[GPLv2.0](https://opensource.org/licenses/GPL-2.0)
