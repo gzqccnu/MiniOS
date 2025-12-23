@@ -1,10 +1,10 @@
 /*
  * MiniOS
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/MiniOS
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -66,7 +66,8 @@ static uint64_t sys_write(uint64_t args[6], uint64_t epc) {
     }
     return len;
   }
-  if (fd >= 0 && fd < FS_MAX_FILES)
+  // filesystem-backed fds live in [FS_FD_BASE, FS_FD_BASE + FS_MAX_FILES)
+  if (fd >= FS_FD_BASE && fd < FS_FD_BASE + FS_MAX_FILES)
     return (uint64_t)fs_write((int)fd, buf, (int)len);
   return (uint64_t)-1;
 }
@@ -88,7 +89,7 @@ static uint64_t sys_read(uint64_t args[6], uint64_t epc) {
   int fd = (int)args[0];
   void *buf = (void *)args[1];
   int n = (int)args[2];
-  if (fd >= 0 && fd < FS_MAX_FILES)
+  if (fd >= FS_FD_BASE && fd < FS_FD_BASE + FS_MAX_FILES)
     return (uint64_t)fs_read(fd, buf, n);
   return (uint64_t)-1;
 }
@@ -96,7 +97,7 @@ static uint64_t sys_read(uint64_t args[6], uint64_t epc) {
 static uint64_t sys_close(uint64_t args[6], uint64_t epc) {
   (void)epc;
   int fd = (int)args[0];
-  if (fd >= 0 && fd < FS_MAX_FILES)
+  if (fd >= FS_FD_BASE && fd < FS_FD_BASE + FS_MAX_FILES)
     return (uint64_t)fs_close(fd);
   return (uint64_t)-1;
 }
