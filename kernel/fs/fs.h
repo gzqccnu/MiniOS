@@ -1,10 +1,10 @@
 /*
  * MiniOS
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/MiniOS
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -16,8 +16,11 @@
 
 #include <stdint.h>
 
-// maximum number of simultaneously open file descriptors in kernel
+// maximum number of simultaneously open file descriptors managed by filesystem
+// file descriptors returned to user space start from FS_FD_BASE (so 0,1,2 can
+// be reserved for stdin/stdout/stderr)
 #define FS_MAX_FILES 16
+#define FS_FD_BASE 3
 // maximum filename length (including terminating '\0')
 #define FS_NAME_MAX 16
 

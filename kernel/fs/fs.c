@@ -1,10 +1,10 @@
 /*
  * MiniOS
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/MiniOS
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -331,7 +331,9 @@ static int fs_alloc_fd(uint32_t inum) {
       fs_fds[i].used = 1;
       fs_fds[i].inum = inum;
       fs_fds[i].offset = 0;
-      return i;
+      // external-facing fd is offset by FS_FD_BASE so that 0,1,2
+      // can be reserved for stdin/stdout/stderr
+      return FS_FD_BASE + i;
     }
   }
   return -1;
@@ -362,9 +364,9 @@ int fs_open(const char *name) {
 }
 
 int fs_read(int fd, void *buf, int n) {
-  if (fd < 0 || fd >= FS_MAX_FILES || !buf || n < 0)
+  if (fd < FS_FD_BASE || fd >= FS_FD_BASE + FS_MAX_FILES || !buf || n < 0)
     return -1;
-  FSFileDesc *d = &fs_fds[fd];
+  FSFileDesc *d = &fs_fds[fd - FS_FD_BASE];
   if (!d->used)
     return -1;
   int r = inode_read(d->inum, buf, d->offset, (uint32_t)n);
@@ -374,9 +376,9 @@ int fs_read(int fd, void *buf, int n) {
 }
 
 int fs_write(int fd, const void *buf, int n) {
-  if (fd < 0 || fd >= FS_MAX_FILES || !buf || n < 0)
+  if (fd < FS_FD_BASE || fd >= FS_FD_BASE + FS_MAX_FILES || !buf || n < 0)
     return -1;
-  FSFileDesc *d = &fs_fds[fd];
+  FSFileDesc *d = &fs_fds[fd - FS_FD_BASE];
   if (!d->used)
     return -1;
   int r = inode_write(d->inum, buf, d->offset, (uint32_t)n);
@@ -386,9 +388,9 @@ int fs_write(int fd, const void *buf, int n) {
 }
 
 int fs_close(int fd) {
-  if (fd < 0 || fd >= FS_MAX_FILES)
+  if (fd < FS_FD_BASE || fd >= FS_FD_BASE + FS_MAX_FILES)
     return -1;
-  FSFileDesc *d = &fs_fds[fd];
+  FSFileDesc *d = &fs_fds[fd - FS_FD_BASE];
   if (!d->used)
     return -1;
   d->used = 0;
