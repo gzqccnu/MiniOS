@@ -127,6 +127,8 @@ dd if=/dev/zero of=kernel/disk.img bs=1K count=64
 # to run the kernel:
 make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 # or you can just run the script to start the os
+# Attention: in this script will automatically generate disk.img for you.
+# Even you created it is ok. the script will skip the step of creating disk.img
 ./run.sh
 ```
 
