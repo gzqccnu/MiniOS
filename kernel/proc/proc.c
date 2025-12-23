@@ -1,10 +1,10 @@
 /*
  * MiniOS
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/MiniOS
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -15,7 +15,12 @@
 #include "../include/log.h"
 #include "../include/riscv.h"
 #include "../mem/kmem.h"
+#include "../mem/vmm.h"
 #include "../string/string.h"
+
+// User heap layout (must match syscall.c)
+#define HEAP_USER_BASE 0x80400000UL
+#define PER_PROC_HEAP (8 * 1024) /* 8KB per process */
 
 // extern assembly context switch
 extern void switch_context(RegState *old, RegState *new);
@@ -240,37 +245,42 @@ PCB *proc_fork(uint64_t mepc) {
   /* set mstatus similar to parent */
   child->regstat.mstatus = parent->regstat.mstatus;
 
-  /* inherit parent relationship / heap info (shallow copy) */
+  /* Inherit parent relationship and deep-copy user heap so that
+   * parent/child observe the same user-space state right after fork.
+   * Kernel objects (PCB, kernel stack) are still managed via
+   * kalloc/kfree, while user heap is managed via vmm_map_page/vmm_unmap.
+   */
   child->ppid = parent->pid;
-  /* Deep-copy parent's heap (brk) if any */
+
   if (parent->brk_base && parent->brk_size > 0) {
+    /* Child gets its own per-pid heap region. */
+    child->brk_base = (void *)(HEAP_USER_BASE + (uint64_t)child->pid * PER_PROC_HEAP);
+    child->brk_size = parent->brk_size;
+
     uint64_t pages = (parent->brk_size + PAGE_SIZE - 1) / PAGE_SIZE;
-    void *first = NULL;
     for (uint64_t i = 0; i < pages; i++) {
-      void *pg = kalloc();
-      if (!pg) {
-        /* allocation failure: free any allocated pages so far */
-        void *q = first;
-        for (uint64_t j = 0; j < i && q; j++) {
-          void *tofree = q;
-          q = (void *)((uint8_t *)q + PAGE_SIZE);
-          kfree(tofree);
+      void *child_vaddr = (void *)((uint8_t *)child->brk_base + i * PAGE_SIZE);
+      void *parent_vaddr = (void *)((uint8_t *)parent->brk_base + i * PAGE_SIZE);
+
+      /* Allocate and map a new physical page for the child. */
+      if (vmm_map_page(child_vaddr, VMM_P_RW | VMM_P_USER) != 0) {
+        /* Roll back any pages we already mapped for this child. */
+        for (uint64_t j = 0; j < i; j++) {
+          void *rollback_vaddr = (void *)((uint8_t *)child->brk_base + j * PAGE_SIZE);
+          vmm_unmap(rollback_vaddr, 1);
         }
+
+        /* Free child's kernel stack and PCB, then fail fork. */
+        void *child_stk_base = (void *)(child->stacktop - PAGE_SIZE);
+        kfree(child_stk_base);
         kfree(child);
         intr_on();
         return NULL;
       }
-      if (!first)
-        first = pg;
 
-      /* copy content from parent's heap */
-      uint8_t *src = (uint8_t *)parent->brk_base + i * PAGE_SIZE;
-      uint8_t *dst = (uint8_t *)pg;
-      for (size_t k = 0; k < PAGE_SIZE; k++)
-        dst[k] = src[k];
+      /* Copy heap page contents from parent to child. */
+      memcpy(child_vaddr, parent_vaddr, PAGE_SIZE);
     }
-    child->brk_base = first;
-    child->brk_size = parent->brk_size;
   } else {
     child->brk_base = NULL;
     child->brk_size = 0;
@@ -346,14 +356,14 @@ int proc_wait_and_reap(void) {
         void *stk = (void *)(cur->stacktop - PAGE_SIZE);
         kfree(stk);
 
-        /* free child's heap pages if any */
+        /* free child's heap virtual pages via vmm_unmap (which also frees physical pages) */
         if (cur->brk_base && cur->brk_size > 0) {
           printk(BLUE "[proc]: \tReaping child pid=%d: free heap (size=%llu)" RESET "\n", childpid,
                  (unsigned long long)cur->brk_size);
           uint64_t pages = (cur->brk_size + PAGE_SIZE - 1) / PAGE_SIZE;
           for (uint64_t i = 0; i < pages; i++) {
-            void *pg = (void *)((uint8_t *)cur->brk_base + i * PAGE_SIZE);
-            kfree(pg);
+            void *vaddr = (void *)((uint8_t *)cur->brk_base + i * PAGE_SIZE);
+            vmm_unmap(vaddr, 1);
           }
         }
 
@@ -450,14 +460,14 @@ void zombies_free(void) {
       void *stk = (void *)(cur->stacktop - PAGE_SIZE);
       kfree(stk);
 
-      // Free heap
+      // Free heap: unmap user heap pages and free the underlying physical pages
       if (cur->brk_base && cur->brk_size > 0) {
         printk(BLUE "[proc]: \tReaping orphan pid=%d: free heap (size=%llu)" RESET "\n", pid,
                (unsigned long long)cur->brk_size);
         uint64_t pages = (cur->brk_size + PAGE_SIZE - 1) / PAGE_SIZE;
         for (uint64_t i = 0; i < pages; i++) {
-          void *pg = (void *)((uint8_t *)cur->brk_base + i * PAGE_SIZE);
-          kfree(pg);
+          void *vaddr = (void *)((uint8_t *)cur->brk_base + i * PAGE_SIZE);
+          vmm_unmap(vaddr, 1);
         }
       }
 
