@@ -97,9 +97,25 @@ else
 endif
 
 # ---------- Source & Object files ----------
+# Collect all C/Assembly sources (including ../usr)
 C_SRCS   := $(shell find $(SRC_DIRS) -name "*.c" 2>/dev/null)
 S_SRCS   := $(shell find $(SRC_DIRS) -name "*.S" 2>/dev/null)
-OBJS     := $(addprefix $(BUILD_DIR)/, $(C_SRCS:.c=.o) $(S_SRCS:.S=.o))
+
+# Split kernel sources and user-space sources (under ../usr)
+KERN_C_SRCS := $(filter-out ../usr/%,$(C_SRCS))
+USR_C_SRCS  := $(filter ../usr/%,$(C_SRCS))
+KERN_S_SRCS := $(filter-out ../usr/%,$(S_SRCS))
+USR_S_SRCS  := $(filter ../usr/%,$(S_SRCS))
+
+# Kernel object files live directly under $(BUILD_DIR)/... (mirroring source tree)
+KERN_OBJS := $(addprefix $(BUILD_DIR)/, $(KERN_C_SRCS:.c=.o) $(KERN_S_SRCS:.S=.o))
+
+# User-space objects from ../usr are placed under $(BUILD_DIR)/usr/...
+USR_OBJS  := $(addprefix $(BUILD_DIR)/usr/, \
+	$(USR_C_SRCS:../usr/%.c=%.o) \
+	$(USR_S_SRCS:../usr/%.S=%.o))
+
+OBJS     := $(KERN_OBJS) $(USR_OBJS)
 OBJS     += $(BUILD_DIR)/main.o
 
 # ---------- Rules ----------
@@ -109,7 +125,9 @@ all: dirs $(BIN)
 
 dirs:
 	@mkdir -p $(BUILD_DIR)
-	@for d in $(SRC_DIRS); do mkdir -p $(BUILD_DIR)/$$d; done
+	@# create kernel subdirs (exclude ../usr, which goes to $(BUILD_DIR)/usr)
+	@for d in $(filter-out ../usr,$(SRC_DIRS)); do mkdir -p $(BUILD_DIR)/$$d; done
+	@mkdir -p $(BUILD_DIR)/usr
 
 # Build ELF
 $(ELF): $(OBJS) linker.ld
@@ -122,14 +140,26 @@ $(BIN): $(ELF)
 	$(OBJCOPY) -O binary $< $@
 	@echo $(VIRTIO) > $(BUILD_DIR)/.virtio
 
-# Compile C
+# Compile C (kernel sources)
 $(BUILD_DIR)/%.o: %.c
 	@echo "  [CC]  $<"
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile Assembly
+# Compile Assembly (kernel sources)
 $(BUILD_DIR)/%.o: %.S
+	@echo "  [AS]  $<"
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile C (user-space sources under ../usr -> $(BUILD_DIR)/usr)
+$(BUILD_DIR)/usr/%.o: ../usr/%.c
+	@echo "  [CC]  $<"
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile Assembly (user-space sources under ../usr -> $(BUILD_DIR)/usr)
+$(BUILD_DIR)/usr/%.o: ../usr/%.S
 	@echo "  [AS]  $<"
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -166,7 +196,6 @@ info:
 clean:
 	@echo "  [CLEAN]"
 	rm -rf $(BUILD_DIR)
-	@# Also clean user-space objects produced from ./usr sources
-	rm -rf ./usr
+	@# user-space sources stay under ../usr; only build outputs under $(BUILD_DIR) are removed
 
 # ==========================================================
