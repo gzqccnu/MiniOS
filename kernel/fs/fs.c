@@ -118,13 +118,49 @@ static int balloc(uint32_t *out_blockno) {
 }
 
 static uint32_t bmap(struct dinode *dip, uint32_t file_block_idx, int alloc) {
-  if (file_block_idx >= NDIRECT)
+  // First, handle direct blocks
+  if (file_block_idx < NDIRECT) {
+    uint32_t bno = dip->addrs[file_block_idx];
+    if (bno == 0 && alloc) {
+      if (balloc(&bno) < 0)
+        return 0;
+      dip->addrs[file_block_idx] = bno;
+    }
+    return bno;
+  }
+
+  // then handle single-level indirect block
+  uint32_t idx = file_block_idx - NDIRECT;
+  if (idx >= NINDIRECT)
     return 0;
-  uint32_t bno = dip->addrs[file_block_idx];
+
+  uint32_t indirect_bno = dip->indirect;
+  char buf[BSIZE];
+  uint32_t *a = (uint32_t *)buf;
+
+  // If necessary, first allocate a data block for the indirect block itself and
+  // initialize it to zero
+  if (indirect_bno == 0) {
+    if (!alloc)
+      return 0;
+    if (balloc(&indirect_bno) < 0)
+      return 0;
+    memset(buf, 0, BSIZE);
+    if (b_write(indirect_bno, buf) < 0)
+      return 0;
+    dip->indirect = indirect_bno;
+  } else {
+    if (b_read(indirect_bno, buf) < 0)
+      return 0;
+  }
+
+  uint32_t bno = a[idx];
   if (bno == 0 && alloc) {
     if (balloc(&bno) < 0)
       return 0;
-    dip->addrs[file_block_idx] = bno;
+    a[idx] = bno;
+    if (b_write(indirect_bno, buf) < 0)
+      return 0;
   }
   return bno;
 }
@@ -299,6 +335,24 @@ static void fs_format(void) {
   din.nlink = 1;
   din.size = 0;
   write_dinode(sb.root_inum, &din);
+
+  // Create a README file in the root directory and write the content generated
+  // from the top-level README.md during build
+  // The current filesystem supports NDIRECT direct blocks + NINDIRECT indirect
+  // blocks, for a total of MAXFILE data blocks.
+  if (README_MD_SIZE > 0) {
+    uint32_t readme_inum;
+    if (ialloc(1, &readme_inum) == 0) {
+      if (dir_add("README.md", readme_inum) == 0) {
+        uint32_t to_write = README_MD_SIZE;
+        uint32_t max_size = MAXFILE * BSIZE;
+        if (to_write > max_size)
+          to_write = max_size;
+        // Write the README content from memory to the new inode
+        (void)inode_write(readme_inum, README_MD, 0, to_write);
+      }
+    }
+  }
 }
 
 void fs_init(void) {
@@ -423,6 +477,19 @@ int fs_unlink(const char *name) {
       b_free(bno);
       din.addrs[i] = 0;
     }
+  }
+  // free indirect blocks and the data blocks they point to
+  if (din.indirect != 0) {
+    char buf[BSIZE];
+    if (b_read(din.indirect, buf) == 0) {
+      uint32_t *a = (uint32_t *)buf;
+      for (uint32_t i = 0; i < NINDIRECT; i++) {
+        if (a[i] != 0)
+          b_free(a[i]);
+      }
+    }
+    b_free(din.indirect);
+    din.indirect = 0;
   }
   din.size = 0;
   din.type = 0; // mark inode as free
