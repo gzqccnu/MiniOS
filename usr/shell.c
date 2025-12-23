@@ -1,10 +1,10 @@
 /*
  * MiniOS
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/MiniOS
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -165,6 +165,10 @@ static void cmd_help(void) {
   uputs("  echo ...  - print arguments\n");
   uputs("  touch F   - create file if not exists\n");
   uputs("  rm F      - remove file\n");
+  uputs("  mv A B    - move/rename file A to B\n");
+  uputs("  pwd       - print current directory (always / in flat fs)\n");
+  uputs("  mkdir D   - not supported (flat fs)\n");
+  uputs("  rmdir D   - not supported (flat fs)\n");
   uputs("  write F S - write string S to file F\n");
   uputs("  read F    - read and print file F\n");
   uputs("  fork      - test fork() syscall\n");
@@ -178,6 +182,7 @@ static void execute(int argc, char *argv[]) {
     return;
   if (strcmp(argv[0], "exit") == 0) {
     uputs("Bye.\n");
+    uputs("type\'Ctrl+A+X\' to exit the qemu emulator.\n");
     sys_exit(0);
   } else if (strcmp(argv[0], "echo") == 0) {
     cmd_echo(argc, argv);
@@ -209,6 +214,46 @@ static void execute(int argc, char *argv[]) {
       if (sys_unlink(argv[1]) < 0)
         uputs("rm: failed\n");
     }
+  } else if (strcmp(argv[0], "mv") == 0) {
+    if (argc < 3) {
+      uputs("mv: usage: mv SRC DST\n");
+    } else if (strcmp(argv[1], argv[2]) == 0) {
+      // nothing to do if source and destination are the same
+      return;
+    } else {
+      int srcfd = sys_open(argv[1], 0);
+      if (srcfd < 0) {
+        uputs("mv: cannot open source file\n");
+      } else {
+        // prepare destination: if it exists, remove it, then create a new file
+        (void)sys_unlink(argv[2]);
+        int dstfd = sys_open(argv[2], 1);
+        if (dstfd < 0) {
+          uputs("mv: cannot open destination file\n");
+          sys_close(srcfd);
+        } else {
+          char buf[128];
+          while (1) {
+            long r = sys_read(srcfd, buf, sizeof(buf));
+            if (r <= 0)
+              break;
+            sys_write(dstfd, buf, (uint64_t)r);
+          }
+          sys_close(srcfd);
+          sys_close(dstfd);
+          if (sys_unlink(argv[1]) < 0) {
+            uputs("mv: warning: failed to remove source\n");
+          }
+        }
+      }
+    }
+  } else if (strcmp(argv[0], "pwd") == 0) {
+    // file system currently only supports a single root directory
+    uputs("/\n");
+  } else if (strcmp(argv[0], "mkdir") == 0) {
+    uputs("mkdir: directories are not supported (flat filesystem)\n");
+  } else if (strcmp(argv[0], "rmdir") == 0) {
+    uputs("rmdir: directories are not supported (flat filesystem)\n");
   } else if (strcmp(argv[0], "write") == 0) {
     extern int pipe_input_active;
     extern const char *pipe_input_name;
