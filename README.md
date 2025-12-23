@@ -126,6 +126,8 @@ dd if=/dev/zero of=kernel/disk.img bs=1K count=64
 # execute `make info` to see the flags and help.
 # to run the kernel:
 make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
+# or you can just run the script to start the os
+./run.sh
 ```
 
 ## Reference
