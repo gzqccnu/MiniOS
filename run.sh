@@ -1,6 +1,8 @@
 #!/bin/bash
 # This script runs the os.
+
 echo "checking options..."
+
 if [ "$1" == "--help" ]; then
     echo "Usage: ./run.sh [options]"
     echo "Options:"
@@ -31,7 +33,18 @@ if [ "$fs_debug" != "0" ] && [ "$fs_debug" != "1" ]; then
     exit 1
 fi
 
+echo "checking whether created disk.img"
+if [ ! -f "kernel/disk.img" ]; then
+    echo "disk.img not found! Auto generating disk.img..."
+    dd if =/dev/zero of=kernel/disk.img bs=1k count=64
+    else
+    echo "disk.img found."
+fi
+
+echo "All options set."
+
 echo "Starting the OS with virtio version $virtio and FS_DEBUG set to $fs_debug..."
 
 make clean
+
 make VIRTIO=$virtio FS_DEBUG=$fs_debug run
