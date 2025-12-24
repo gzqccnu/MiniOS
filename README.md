@@ -1,4 +1,4 @@
-# MiniOS
+# Lrix
 
 ## 📌 Introduction
 This is a scratch implemention of a Operating System based on [RISC-V](https://riscv.org).
@@ -92,7 +92,7 @@ To run this project, you need to have belowings:
 
 ### About
 Flags of [Makefile](./Makefile):
-### 1. MiniOS Top-Level Build Parameters
+### 1. Lrix Top-Level Build Parameters
 | Variable Name | Description                                                                 |
 |---------------|-----------------------------------------------------------------------------|
 | KDIR          | Kernel directory, fixed value: `kernel`                                     |
@@ -120,7 +120,7 @@ Flags of [Makefile](./Makefile):
 > To use flag `VIRTIO=2`, your qemu version needs to be higher than 5. <br>
 > When developing, I using **qemu** version **9.2**
 ```bash
-git clone https://github.com/lrisguan/MiniOS.git
+git clone https://github.com/lrisguan/Lrix.git
 cd Minios
 # create disk file
 dd if=/dev/zero of=kernel/disk.img bs=1K count=64

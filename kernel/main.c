@@ -1,11 +1,11 @@
 /*
- * MiniOS
+ * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
  * 
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
  * 
- * Project homepage: https://github.com/lrisguan/MiniOS
+ * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
 
@@ -37,7 +37,7 @@ int kmain() {
   scheduler_init();              // initialize process scheduler
   blk_init();                    // initialize block device (virtio-blk)
   fs_init();                     // initialize simple in-memory filesystem (later on-disk)
-  INFO("welcome to MiniOS!");
+  INFO("welcome to Lrix!");
   // create initial user shell process
   PCB *p = proc_create("shell", (uint64_t)user_shell, 0);
   if (!p) {

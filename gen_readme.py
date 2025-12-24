@@ -1,10 +1,10 @@
-# MiniOS
+# Lrix
 # Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
 # 
 # This program is released under the terms of the GNU General Public License version 2(GPLv2).
 # See https://opensource.org/licenses/GPL-2.0 for more information.
 # 
-# Project homepage: https://github.com/lrisguan/MiniOS
+# Project homepage: https://github.com/lrisguan/Lrix
 # Description: A scratch implemention of OS based on RISC-V
 
 #!/usr/bin/env python3
@@ -39,13 +39,13 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", encoding="utf-8") as f:
         f.write("/*\n"
-                  " * MiniOS\n"
+                  " * Lrix\n"
                   " * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>\n"
                   " * \n"
                   " * This program is released under the terms of the GNU General Public License version 2(GPLv2). \n"
                   " * See https://opensource.org/licenses/GPL-2.0 for more information. \n"
                   " * \n"
-                  " * Project homepage: https://github.com/lrisguan/MiniOS \n"
+                  " * Project homepage: https://github.com/lrisguan/Lrix \n"
                   " * Description: A scratch implemention of OS based on RISC-V \n"
                   " */\n\n")
         f.write("/*\n"

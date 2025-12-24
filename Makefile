@@ -1,10 +1,10 @@
-# MiniOS
+# Lrix
 # Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
 # 
 # This program is released under the terms of the GNU General Public License version 2(GPLv2).
 # See https://opensource.org/licenses/GPL-2.0 for more information.
 # 
-# Project homepage: https://github.com/lrisguan/MiniOS
+# Project homepage: https://github.com/lrisguan/Lrix
 # Description: A scratch implemention of OS based on RISC-V
 
 KDIR := kernel
@@ -33,7 +33,7 @@ run: kernel
 
 # Show build information and usage
 info:
-	@echo "==== MiniOS Build Info (top-level) ===="
+	@echo "==== Lrix Build Info (top-level) ===="
 	@echo "---------------------------------------------------------------------------------"
 	@echo
 	@echo "KDIR       = $(KDIR)"

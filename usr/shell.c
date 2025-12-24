@@ -1,15 +1,15 @@
 /*
- * MiniOS
+ * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
  *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
  *
- * Project homepage: https://github.com/lrisguan/MiniOS
+ * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
 
-// user-space shell for MiniOS (runs as a regular process using syscalls)
+// user-space shell for Lrix (runs as a regular process using syscalls)
 
 #include "../kernel/include/log.h"
 #include "user.h"
@@ -36,7 +36,7 @@ static void uputc(char c) { uwrite_buf(&c, 1); }
 static void uprompt(const char *user, const char *host) {
   (void)user;
   (void)host;
-  uputs(RED "MiniOS" GREEN "$ " RESET);
+  uputs(RED "Lrix" GREEN "$ " RESET);
 }
 
 static int readline(char *buf, int maxlen) {
@@ -384,10 +384,10 @@ void user_shell(void) {
 
   (void)sys_getpid(); // touch to avoid unused warning
 
-  uputs("Welcome to MiniOS shell! Type 'help' for help.\n");
+  uputs("Welcome to Lrix shell! Type 'help' for help.\n");
 
   while (1) {
-    uprompt("root", "MiniOS");
+    uprompt("root", "Lrix");
     int len = readline(line, sizeof(line));
     if (len <= 0)
       continue;
