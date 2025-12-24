@@ -121,7 +121,11 @@ OBJS     += $(BUILD_DIR)/main.o
 # ---------- Rules ----------
 .PHONY: all clean run info dirs
 
-all: dirs $(BIN)
+all: dirs gen_readme $(BIN)
+
+gen_readme:
+	@echo "  [GEN] README.md -> kernel/fs/README.c"
+	@python3 ../gen_readme.py
 
 dirs:
 	@mkdir -p $(BUILD_DIR)
