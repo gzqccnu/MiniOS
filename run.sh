@@ -26,6 +26,7 @@ fi
 
 virtio=""
 fs_debug=""
+recreate_disk=""
 
 echo "checking virtio option..."
 echo "1 for virtio legacy, 2 for virtio modern"
@@ -45,9 +46,19 @@ fi
 echo "checking whether created disk.img"
 if [ ! -f "kernel/disk.img" ]; then
     echo "disk.img not found! Auto generating disk.img..."
-    dd if =/dev/zero of=kernel/disk.img bs=1k count=64
+    dd if=/dev/zero of=kernel/disk.img bs=1k count=64
     else
     echo "disk.img found."
+    echo "whether to recreate disk.img? (y to recreate, n to skip)"
+    read -p "(y/n): " recreate_disk
+    if [ "$recreate_disk" == "y" ]; then
+        echo "Recreating disk.img..."
+        rm -f kernel/disk.img
+        dd if=/dev/zero of=kernel/disk.img bs=1k count=64
+        echo "disk.img recreated."
+    else
+        echo "Skipping disk.img recreation."
+    fi
 fi
 
 echo "All options set."
