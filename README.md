@@ -98,8 +98,8 @@ Flags of [Makefile](./Makefile):
 | KDIR          | Kernel directory, fixed value: `kernel`                                     |
 | UDIR          | User program directory, fixed value: `usr`                                  |
 | KIMG          | Kernel binary file path, fixed value: `kernel/build/kernel.bin`             |
-| FS_DEBUG      | File system debug log toggle:<br>0 = Disable; 1 = Enable (default 0)|
-| VIRTIO        | VirtIO mode selection:<br>1 = legacy; 2 = modern (default 1)             |
+| FS_DEBUG      | File system debug log toggle:<br>0 = Disable; 1 = Enable (default 0)        |
+| VIRTIO        | VirtIO mode selection:<br>1 = legacy; 2 = modern (default 1)                |
 | TRAP_DEBUG    | Trap debug:<br>0=disbale; 1=enable (default 0)                              |
 
 ### 2. Common Build Commands
@@ -117,7 +117,8 @@ Flags of [Makefile](./Makefile):
 | make FS_DEBUG=0 VIRTIO=2 run          | Disable file system debug logs, use modern VirtIO mode          |
 ### Run
 > [!Warning]
-> To use flag `VIRTIO=2`, your qemu version needs to be higher than 5.
+> To use flag `VIRTIO=2`, your qemu version needs to be higher than 5. <br>
+> When developing, I using **qemu** version **9.2**
 ```bash
 git clone https://github.com/lrisguan/MiniOS.git
 cd Minios
@@ -128,7 +129,7 @@ dd if=/dev/zero of=kernel/disk.img bs=1K count=64
 make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 # or you can just run the script to start the os
 # Attention: in this script will automatically generate disk.img for you.
-# Even you created it is ok. the script will skip the step of creating disk.img
+# Even you created it is ok. The script will ask you whether to re-create it or not.
 ./run.sh
 ```
 
