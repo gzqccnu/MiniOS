@@ -121,7 +121,11 @@ OBJS     += $(BUILD_DIR)/main.o
 # ---------- Rules ----------
 .PHONY: all clean run info dirs
 
-all: dirs gen_readme $(BIN)
+all: dirs gen_readme $(BIN) disk.img
+
+disk.img:
+	@echo "  [GEN] disk.img"
+	@dd if=/dev/zero of=disk.img bs=1M count=64
 
 gen_readme:
 	@echo "  [GEN] README.md -> kernel/fs/README.c"
