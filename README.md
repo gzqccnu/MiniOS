@@ -122,16 +122,17 @@ Flags of [Makefile](./Makefile):
 ```bash
 git clone https://github.com/lrisguan/Lrix.git
 cd Minios
-# create disk file
-dd if=/dev/zero of=kernel/disk.img bs=1K count=64
 # execute `make info` to see the flags and help.
-# to run the kernel:
+# to run the os:
 make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 # or you can just run the script to start the os
-# Attention: in this script will automatically generate disk.img for you.
-# Even you created it is ok. The script will ask you whether to re-create it or not.
 ./run.sh
 ```
+> [!Tip]
+> `make run` will automatically generate a disk.img for you. 
+> `make clean' only deletes object files except disk.img. 
+> So if you want to have a better control of whether to delete or create disk.img, 
+> you can use [run.sh](./run.sh) to control it in a interactive environment.
 
 ## *Reference*
 When implementing this project, I refer to *[xv6-riscv](https://github.com/mit-pdos/xv6-riscv)*
