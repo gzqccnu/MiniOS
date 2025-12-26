@@ -1,10 +1,10 @@
 /*
  * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -41,6 +41,12 @@
 
 // list processes (ps)
 #define SYS_PS 18
+
+// shutdown / halt the whole system
+#define SYS_SHUTDOWN 19
+
+// suspend current process into blocked state (used by bg worker)
+#define SYS_SUSPEND 20
 
 /* dispatcher: num, args[6], epc -> return value */
 uint64_t syscall_dispatch(uint64_t num, uint64_t args[6], uint64_t epc);

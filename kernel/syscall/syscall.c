@@ -11,6 +11,8 @@
 
 #include "syscall.h"
 #include "../fs/fs.h"
+#include "../include/log.h"
+#include "../include/riscv.h"
 #include "../mem/kmem.h"
 #include "../mem/vmm.h"
 #include "../proc/proc.h"
@@ -162,6 +164,44 @@ static uint64_t sys_wait(uint64_t args[6], uint64_t epc) {
   return (uint64_t)pid;
 }
 
+static uint64_t sys_kill(uint64_t args[6], uint64_t epc) {
+  (void)epc;
+  int pid = (int)args[0];
+  int r = proc_kill(pid);
+  return (uint64_t)r;
+}
+// suspend current process into blocked_list; never returns on success
+static uint64_t sys_suspend(uint64_t args[6], uint64_t epc) {
+  (void)args;
+  (void)epc;
+  proc_suspend_current();
+  return 0; // not reached
+}
+
+// shutdown / halt the whole system (does not return)
+static uint64_t sys_shutdown(uint64_t args[6], uint64_t epc) {
+  (void)args;
+  (void)epc;
+
+  // 1) stop new interrupts/scheduling
+  intr_off();
+
+  INFO("System shutdown requested: cleaning up processes...");
+
+  // 2) free all non-idle, non-current processes
+  proc_shutdown_all();
+
+  INFO("All processes cleaned. Halting CPU...");
+
+  // 3) finally halt CPU
+  while (1) {
+    asm volatile("wfi");
+  }
+
+  // not reached, but keep compiler happy
+  return 0;
+}
+
 /* User heap virtual layout:
  * Each process gets a per-pid heap region starting at HEAP_USER_BASE + pid * PER_PROC_HEAP.
  * We map physical pages into that virtual region using vmm_map_page so the virtual
@@ -261,8 +301,12 @@ uint64_t syscall_dispatch(uint64_t num, uint64_t args[6], uint64_t epc) {
     return sys_read(args, epc);
   case SYS_CLOSE:
     return sys_close(args, epc);
+  case SYS_KILL:
+    return sys_kill(args, epc);
   case SYS_FORK:
     return sys_fork(args, epc);
+  case SYS_SHUTDOWN:
+    return sys_shutdown(args, epc);
   case SYS_WAIT:
     return sys_wait(args, epc);
   case SYS_SBRK:
@@ -277,6 +321,8 @@ uint64_t syscall_dispatch(uint64_t num, uint64_t args[6], uint64_t epc) {
     return sys_trunc(args, epc);
   case SYS_PS:
     return sys_ps(args, epc);
+  case SYS_SUSPEND:
+    return sys_suspend(args, epc);
   // SYS_EXEC is handled specially in trap.c so that it can change mepc/arguments; do not
   // process it here.
   default:
