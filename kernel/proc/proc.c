@@ -38,6 +38,33 @@ PCB *blocked_list = NULL; // processes blocked waiting (e.g., wait())
 static int next_pid = 1;
 static RegState boot_ctx; // temporary context for boot / first switch
 
+// internal helper: free one PCB's resources (stack + user heap + PCB itself)
+// Note: Do not call it on the currently running process,
+//       otherwise it is equivalent to performing kfree on a stack that is in use.
+static void free_pcb_resources(PCB *p) {
+  if (!p)
+    return;
+
+  int pid = p->pid;
+
+  printk(BLUE "[proc]: \tShutdown cleanup pid=%d: free stack" RESET "\n", pid);
+  void *stk = (void *)(p->stacktop - PAGE_SIZE);
+  kfree(stk);
+
+  if (p->brk_base && p->brk_size > 0) {
+    printk(BLUE "[proc]: \tShutdown cleanup pid=%d: free heap (size=%llu)" RESET "\n", pid,
+           (unsigned long long)p->brk_size);
+    uint64_t pages = (p->brk_size + PAGE_SIZE - 1) / PAGE_SIZE;
+    for (uint64_t i = 0; i < pages; i++) {
+      void *vaddr = (void *)((uint8_t *)p->brk_base + i * PAGE_SIZE);
+      vmm_unmap(vaddr, 1);
+    }
+  }
+
+  printk(BLUE "[proc]: \tShutdown cleanup pid=%d: free PCB" RESET "\n", pid);
+  kfree(p);
+}
+
 // Entry function of the idle process
 void idle_entry(void) {
   // 1. Make sure interrupts are enabled (MIE=1).
@@ -489,6 +516,165 @@ void zombies_free(void) {
     prev = cur;
     cur = next;
   }
+}
+
+// Called when the system is shutting down: free all non-idle, non-current
+// processes from ready_queue, blocked_list and zombie_list.
+// Requirement: The caller has disabled interrupts and will not perform
+//              scheduling afterward.
+void proc_shutdown_all(void) {
+  PCB *self = current_proc;
+
+  // 1) free all processes in ready_queue
+  if (ready_queue) {
+    PCB *p = ready_queue->head;
+    while (p) {
+      PCB *next = p->next;
+      if (p != idle_proc && p != self)
+        free_pcb_resources(p);
+      p = next;
+    }
+    ready_queue->head = ready_queue->tail = NULL;
+    ready_queue->count = 0;
+  }
+
+  // 2) free blocked_list
+  PCB *p = blocked_list;
+  blocked_list = NULL;
+  while (p) {
+    PCB *next = p->next;
+    if (p != idle_proc && p != self)
+      free_pcb_resources(p);
+    p = next;
+  }
+
+  // 3) free zombie_list
+  p = zombie_list;
+  zombie_list = NULL;
+  while (p) {
+    PCB *next = p->next;
+    if (p != idle_proc && p != self)
+      free_pcb_resources(p);
+    p = next;
+  }
+
+  // 4) idle_proc and current_proc:
+  // - idle_proc usually does not need to be forcibly released;
+  // - current_proc is executing shutdown code and is not released here to avoid the stack being
+  // reclaimed prematurely.
+}
+
+// suspend current process into blocked_list and schedule another one.
+// This is used by background workers (bg) to exist without consuming CPU.
+void proc_suspend_current(void) {
+  intr_off();
+  if (!current_proc || current_proc == idle_proc) {
+    intr_on();
+    return;
+  }
+
+  // push current process onto blocked_list
+  current_proc->pstat = BLOCKED;
+  current_proc->next = blocked_list;
+  blocked_list = current_proc;
+
+  // switch to another process; should not return to this process unless woken
+  schedule();
+
+  // if somehow we return, just park the CPU
+  while (1) {
+    asm volatile("wfi");
+  }
+}
+
+// kill a process by pid. For simplicity, we hard-kill the target process and
+// immediately free its resources, without creating zombies.
+int proc_kill(int pid) {
+  intr_off();
+
+  if (pid < 0)
+    goto not_found;
+
+  // do not allow killing idle
+  if (idle_proc && idle_proc->pid == pid)
+    goto not_found;
+
+  // if killing current process, just call proc_exit (never returns)
+  if (current_proc && current_proc->pid == pid) {
+    intr_on();
+    proc_exit();
+    // not reached
+  }
+
+  // search ready_queue
+  if (ready_queue) {
+    PCB *prev = NULL;
+    PCB *cur = ready_queue->head;
+    while (cur) {
+      if (cur->pid == pid) {
+        PCB *next = cur->next;
+        if (prev)
+          prev->next = next;
+        else
+          ready_queue->head = next;
+        if (!next)
+          ready_queue->tail = prev;
+        ready_queue->count--;
+
+        free_pcb_resources(cur);
+        intr_on();
+        return 0;
+      }
+      prev = cur;
+      cur = cur->next;
+    }
+  }
+
+  // search blocked_list
+  {
+    PCB *prev = NULL;
+    PCB *cur = blocked_list;
+    while (cur) {
+      if (cur->pid == pid) {
+        PCB *next = cur->next;
+        if (prev)
+          prev->next = next;
+        else
+          blocked_list = next;
+
+        free_pcb_resources(cur);
+        intr_on();
+        return 0;
+      }
+      prev = cur;
+      cur = cur->next;
+    }
+  }
+
+  // search zombie_list
+  {
+    PCB *prev = NULL;
+    PCB *cur = zombie_list;
+    while (cur) {
+      if (cur->pid == pid) {
+        PCB *next = cur->next;
+        if (prev)
+          prev->next = next;
+        else
+          zombie_list = next;
+
+        free_pcb_resources(cur);
+        intr_on();
+        return 0;
+      }
+      prev = cur;
+      cur = cur->next;
+    }
+  }
+
+not_found:
+  intr_on();
+  return -1;
 }
 
 void schedule(void) {

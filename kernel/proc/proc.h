@@ -1,10 +1,10 @@
 /*
  * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -64,8 +64,19 @@ PCB *proc_fork(uint64_t mepc);
 /* wait for a child in zombie list and reap it; return pid or -1 if none */
 int proc_wait_and_reap(void);
 
+// kill a process by pid: return 0 on success, -1 if not found/invalid
+int proc_kill(int pid);
+
+// suspend current process into blocked state
+void proc_suspend_current(void);
+
 // debug: dump all processes and their states
 void proc_dump(void);
+
+// shutdown helper: free all non-idle processes (ready/blocked/zombie lists)
+// Note: current_proc itself is not freed here to avoid freeing on a stack that is in use;
+// This function is only called in the system shutdown path.
+void proc_shutdown_all(void);
 
 extern procqueue *ready_queue;
 extern PCB *current_proc;
