@@ -172,18 +172,24 @@ static void cmd_help(void) {
   uputs("  write F S - write string S to file F\n");
   uputs("  read F    - read and print file F\n");
   uputs("  fork      - test fork() syscall\n");
+  uputs("  bg        - create a simple background worker process\n");
+  uputs("  kill PID  - kill process by pid\n");
   uputs("  ps        - list processes\n");
   uputs("  help      - show this message\n");
-  uputs("  exit      - exit shell\n");
+  uputs("  exit      - shutdown system\n");
+  uputs("  halt      - shutdown whole system\n");
 }
 
 static void execute(int argc, char *argv[]) {
   if (argc == 0)
     return;
   if (strcmp(argv[0], "exit") == 0) {
-    uputs("Bye.\n");
-    uputs("type\'Ctrl+A+X\' to exit the qemu emulator.\n");
-    sys_exit(0);
+    uputs("Shutting down system...\n");
+    uputs("You can type \'Ctrl + Alt + X\' to exit qemu emulator.\n");
+    sys_shutdown();
+  } else if (strcmp(argv[0], "halt") == 0) {
+    uputs("Shutting down system...\n");
+    sys_shutdown();
   } else if (strcmp(argv[0], "echo") == 0) {
     cmd_echo(argc, argv);
   } else if (strcmp(argv[0], "ls") == 0) {
@@ -357,6 +363,64 @@ static void execute(int argc, char *argv[]) {
       // continues predictably and we exercise the tested wait path
       sys_wait();
     }
+  } else if (strcmp(argv[0], "bg") == 0) {
+    int pid = sys_fork();
+    if (pid < 0) {
+      uputs("bg: fork failed\n");
+    } else if (pid == 0) {
+      // child: background worker that suspends itself into blocked_list
+      uputs("[bg] background worker started\n");
+      sys_suspend(); // never returns
+      sys_exit(0);
+    } else {
+      // parent: do not wait, just report
+      uputs("[bg] started background process pid= ");
+      char numbuf[32];
+      int n = pid;
+      int idx = 0;
+      if (n == 0) {
+        numbuf[idx++] = '0';
+      } else {
+        char tmp[32];
+        int t = 0;
+        while (n > 0 && t < (int)sizeof(tmp)) {
+          tmp[t++] = (char)('0' + (n % 10));
+          n /= 10;
+        }
+        while (t > 0)
+          numbuf[idx++] = tmp[--t];
+      }
+      numbuf[idx] = '\0';
+      uputs(numbuf);
+      uputc('\n');
+    }
+  } else if (strcmp(argv[0], "kill") == 0) {
+    if (argc < 2) {
+      uputs("kill: usage: kill PID\n");
+    } else {
+      // simple decimal parsing
+      const char *s = argv[1];
+      int neg = 0;
+      if (*s == '-') {
+        neg = 1;
+        s++;
+      }
+      int pid = 0;
+      while (*s) {
+        if (*s < '0' || *s > '9') {
+          uputs("kill: invalid pid\n");
+          return;
+        }
+        pid = pid * 10 + (*s - '0');
+        s++;
+      }
+      if (neg)
+        pid = -pid;
+
+      int r = sys_kill(pid);
+      if (r < 0)
+        uputs("kill: no such process or cannot kill\n");
+    }
   } else if (strcmp(argv[0], "help") == 0) {
     cmd_help();
   } else {
@@ -384,7 +448,7 @@ void user_shell(void) {
 
   (void)sys_getpid(); // touch to avoid unused warning
 
-  uputs("Welcome to Lrix shell! Type 'help' for help.\n");
+  uputs(MAGENTA "Welcome to Lrix shell! Type 'help' for help." RESET "\n");
 
   while (1) {
     uprompt("root", "Lrix");
