@@ -1,10 +1,10 @@
 /*
  * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
@@ -36,6 +36,9 @@ int sys_unlink(const char *name);
 int sys_fork(void);
 int sys_wait(void);
 
+// kill process by pid
+int sys_kill(int pid);
+
 // exec: replace current process with named program (does not return on success)
 int sys_exec(const char *name);
 
@@ -44,5 +47,11 @@ int sys_trunc(const char *name);
 
 // list processes (ps)
 int sys_ps(void);
+
+// shutdown / halt the whole system (does not return)
+void sys_shutdown(void);
+
+// suspend current process into blocked state (used by bg worker)
+void sys_suspend(void);
 
 #endif /* _USER_H_ */
