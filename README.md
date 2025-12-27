@@ -3,6 +3,14 @@
 ## 📌 Introduction
 This is a scratch implemention of a Operating System based on [RISC-V](https://riscv.org).
 
+## 👀 Presentation
+<details>
+    <summary> Presentation </summary>
+    <video width="320" height="240" controls>
+        <source src="./assets/lrix.mp4" type="video/mp4">
+    </video>
+</details>
+
 ## 🚀 Quick start
 To run this project, you need to have belowings:
 ### Dependencies
