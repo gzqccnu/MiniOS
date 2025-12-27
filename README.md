@@ -7,7 +7,7 @@ This is a scratch implemention of a Operating System based on [RISC-V](https://r
 <details>
     <summary> Presentation </summary>
     <video width="320" height="240" controls>
-        <source src="./assets/lrix.mp4" type="video/mp4">
+        <source src="https://raw.githubusercontent.com/lrisguan/Lrix/main/assets/lrix.mp4" type="video/mp4">
     </video>
 </details>
 
