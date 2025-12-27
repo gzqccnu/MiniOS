@@ -7,6 +7,13 @@ This is a scratch implemention of a Operating System based on [RISC-V](https://r
 https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 
 ## 🚀 Quick start
+> [!NOTE]
+> Actually slow start.
+> <br>
+> If you have **riscv toolchain** and **qemu**(higher version than 5 maybe), you can go to [run](#run)
+> <br>
+> If you not have them, you need to obey the followings
+
 To run this project, you need to have belowings:
 ### Dependencies
 - **RISC-V toolchain**
@@ -17,7 +24,7 @@ To run this project, you need to have belowings:
     > git clone takes around 6.65 GB of disk and download size
 
     ##### Prerequisites
-    - On **Ubuntu/debain**
+    - On **Ubuntu/Debain**
     ```bash
     sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip python3-tomli libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev
     ```
@@ -77,6 +84,10 @@ To run this project, you need to have belowings:
     make -j$(nproc)
     sudo make install
     ```
+    Then you can test it
+    ```bash
+    qemu-system-riscv64 --version
+    ```
 - **docker(optional)** for a higher version of **glibc** to compile qemu.
     > Only when you compile the **latest qemu** from source, you may need to install docker for a higher version of **glibc**.
 
@@ -85,12 +96,25 @@ To run this project, you need to have belowings:
 
     Compiling steps
     ```bash
+    docker pull `os`:latest
+    docker run -d -name osdev `os`:latest bash
+    # if you compiled riscv-toolchain on your host os
+    # you may need to add more prameters to start the 
+    # docker container.
+    # you can start it like this:
+    # docker run -d -name osdev `os`:latest -v /opt/riscv:/opt/riscv bash
+    # then you enter the container with higher glibc
+    # and you can compile latest qemu
     git clone https://github.com/qemu/qemu.git
     mkdir build
     cd build
     ../configure
     make -j$(nproc)
     sudo make install
+    ```
+    Then you can test it
+    ```bash
+    qemu-system-riscv64 --version
     ```
 
 ### About
@@ -121,7 +145,9 @@ Flags of [Makefile](./Makefile):
 ### Run
 > [!Warning]
 > To use flag `VIRTIO=2`, your qemu version needs to be higher than 5. <br>
-> When developing, I using **qemu** version **9.2**
+> I had not tested actually the lowest supported qemu version, if you run success
+> on a lower version of qemu, let me know. Thanks!
+> When developing, I using **qemu** version **9.2**.
 ```bash
 git clone https://github.com/lrisguan/Lrix.git
 cd Minios
@@ -133,7 +159,7 @@ make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 ```
 > [!Tip]
 > `make run` will automatically generate a disk.img for you. 
-> `make clean' only deletes object files except disk.img. 
+> `make clean` only deletes object files except disk.img. 
 > So if you want to have a better control of whether to delete or create disk.img, 
 > you can use [run.sh](./run.sh) to control it in a interactive environment.
 
