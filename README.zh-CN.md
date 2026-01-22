@@ -18,6 +18,14 @@
 https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 
 ## 🚀 快速开始
+> [!Tip]
+> 这实际上是一份基于 Docker 快速运行本项目的指南，但仅适用于 **amd64 架构的 Linux 系统**。
+> ```bash
+> docker pull lrisguan/lrix:latest
+> docker run -d --name lrix lrix:latest bash
+> ```
+> 执行完成后，你无需耗时进行编译操作，直接参考文档的[关于](#关于)和[运行](#运行)章节即可。
+
 > [!NOTE]
 > 实际上是慢速开始。
 > <br>
@@ -36,6 +44,7 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 
     ##### 前置条件
     - **Ubuntu/Debian** 系统
+    > 若你使用的是 Ubuntu 系统，也可通过[此链接](https://github.com/riscv-collab/riscv-gnu-toolchain/releases/tag/2026.01.09)下载预编译的 RISC-V 工具链。
     ```bash
     sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip python3-tomli libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev
     ```
@@ -62,6 +71,11 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
     验证工具链是否安装成功。
 - **qemu-system-riscv**
     用于创建 RISC-V 虚拟机。
+    > **提示**
+    > 若你的 Ubuntu 系统版本为 22.04，直接执行以下命令即可：
+    > ```bash
+    > sudo apt install qemu-system-riscv64
+    > ```
     #### 安装步骤
     ##### 从预编译包安装
     - **Ubuntu/Debian** 系统

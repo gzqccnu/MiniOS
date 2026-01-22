@@ -20,7 +20,16 @@ For details of Lrix, you can visit [Report](./assets/LrixReport.pdf) or
 https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 
 ## 🚀 Quick start
+> [!Tip]
+> This is actually quick start for using docker to run this project, but only for **Linux** with architecture **amd64**
+> ```bash
+> docker pull lrisguan/lrix:latest
+> docker run -d --name lrix lrix:latest bash
+> ```
+> Then you could refer to [About](#about) and [Run](#run) part instead of compile for long time
+
 > [!NOTE]
+> Don't use docker
 > Actually slow start.
 > <br>
 > If you have **riscv toolchain** and **qemu**(higher version than 5 maybe), you can go to [run](#run)
@@ -33,11 +42,12 @@ To run this project, you need to have belowings:
     for compiling C programs.
     #### Installation steps
     
-    > [!Warning]
+    > **[!Warning]**
     > git clone takes around 6.65 GB of disk and download size
 
     ##### Prerequisites
     - On **Ubuntu/Debian**
+    > If you are using Ubuntu, you can also download pre-build riscv-toolchain [here](https://github.com/riscv-collab/riscv-gnu-toolchain/releases/tag/2026.01.09)
     ```bash
     sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip python3-tomli libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev
     ```
@@ -62,8 +72,12 @@ To run this project, you need to have belowings:
     riscv64-unknown-elf-gcc --version
     ```
     to verify whether the toolchain is installed.
-- **qemu-system-riscv**
-    for create a virtual machine of RISC-V.
+- **qemu-system-riscv64** for create a virtual machine of RISC-V.
+    > **[!Tip]**
+    > If your Ubuntu version is 22.04, you can just run
+    > ```bash
+    > sudo apt install qemu-system-riscv64
+    > ```
     #### Installation steps
     ##### Install from prebuild package
     - On **Ubuntu/Debian**
@@ -86,7 +100,7 @@ To run this project, you need to have belowings:
     ```
     ##### Install from souce
     
-    > [!Tip]
+    > **[!Tip]**
     > If you install qemu from source, may you need a higher version of **glibc**. When I compile it, the version is **2.35** at least. Considering that **glibc** is a very import system dependency, I recommand to compile **qemu** in docker instead. You can see the following **docker(optional)** part.
 
     ```bash
@@ -105,7 +119,7 @@ To run this project, you need to have belowings:
 - **docker(optional)** for a higher version of **glibc** to compile qemu.
     > Only when you compile the **latest qemu** from source, you may need to install docker for a higher version of **glibc**.
 
-    > [!Important]
+    > **[!Important]**
     > Ensure your OS has a higher version of **glibc** then continue reading the rest of the content
 
     Compiling steps
@@ -160,7 +174,7 @@ Flags of [Makefile](./Makefile):
 | make TRAP_DEBUG=1 run                 | Enable trap debug logs                                          |
 
 ### Run
-> [!Warning]
+> **[!Warning]**
 > To use flag `VIRTIO=2`, your qemu version needs to be higher than 5. <br>
 > I had not tested actually the lowest supported qemu version, if you run success
 > on a lower version of qemu, let me know. Thanks!
@@ -177,7 +191,7 @@ make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 # or you can just run the script to start the os
 ./run.sh
 ```
-> [!Tip]
+> **[!Tip]**
 > `make run` will automatically generate a disk.img for you. 
 > `make clean` only deletes object files except disk.img. 
 > So if you want to have a better control of whether to delete or create disk.img, 
