@@ -165,6 +165,9 @@ Flags of [Makefile](./Makefile):
 > I had not tested actually the lowest supported qemu version, if you run success
 > on a lower version of qemu, let me know. Thanks!
 > When developing, I using **qemu** version **9.2**.
+> Actually, after testing, version **6.2.0** is OK. For Ubuntu 22.04, just install the 
+> system qemu and it works well.
+
 ```bash
 git clone https://github.com/lrisguan/Lrix.git
 cd Lrix

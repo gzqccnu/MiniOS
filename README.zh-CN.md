@@ -162,6 +162,7 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 > 使用 `VIRTIO=2` 标志需要 qemu 版本高于 5。<br>
 > 我实际上没有测试过支持的最低 qemu 版本，如果你在更低版本的 qemu 上运行成功，请告诉我。谢谢！
 > 开发时我使用的 **qemu** 版本为 **9.2**。
+> 事实上，经过测试，**6.2.0**版本即可。对于 Ubuntu 22.04，你只需要安装系统 qemu。
 
 ```bash
 git clone https://github.com/lrisguan/Lrix.git 
