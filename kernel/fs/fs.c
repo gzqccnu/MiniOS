@@ -16,6 +16,9 @@
 #include "../string/string.h"
 #include "blk.h"
 
+extern const uint8_t README_MD[];
+extern const unsigned int README_MD_SIZE;
+
 static int b_read(uint32_t blockno, void *buf) {
   if (blockno >= N_BLOCKS)
     return -1;
