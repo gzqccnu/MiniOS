@@ -37,7 +37,7 @@ To run this project, you need to have belowings:
     > git clone takes around 6.65 GB of disk and download size
 
     ##### Prerequisites
-    - On **Ubuntu/Debain**
+    - On **Ubuntu/Debian**
     ```bash
     sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip python3-tomli libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev
     ```
@@ -66,7 +66,7 @@ To run this project, you need to have belowings:
     for create a virtual machine of RISC-V.
     #### Installation steps
     ##### Install from prebuild package
-    - On **Ubuntu/Debain**
+    - On **Ubuntu/Debian**
     ```bash
     sudo apt install qemu qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils 
     sudo systemctl enable --now libvirtd
