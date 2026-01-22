@@ -38,7 +38,7 @@ def main() -> None:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", encoding="utf-8") as f:
-        f.write("/*\n"
+        f.write("/**\n"
                   " * Lrix\n"
                   " * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>\n"
                   " * \n"
