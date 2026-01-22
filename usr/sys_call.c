@@ -1,4 +1,4 @@
-/*
+/**
  * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
  * 
