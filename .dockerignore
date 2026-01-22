@@ -1,0 +1,13 @@
+assets/
+.git
+.gitignore
+License
+.editorconfig
+.clang-format
+*.pdf
+*.tex
+*.bib
+*.log
+*.aux
+.DS_Store
+
