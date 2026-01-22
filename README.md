@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 > docker pull lrisguan/lrix:latest
 > docker run -d --name lrix lrix:latest bash
 > ```
-> Then you could refer to [About](#about) and [Run](#run) part instead of compile for long time
+> Then you could refer to [About](#about) and [Run](#run) part instead of compiling for long time
 
 > [!NOTE]
 > Don't use docker
@@ -74,7 +74,7 @@ To run this project, you need to have belowings:
     to verify whether the toolchain is installed.
 - **qemu-system-riscv64** for create a virtual machine of RISC-V.
     > **[!Tip]**
-    > If your Ubuntu version is 22.04, you can just run
+    > If your Ubuntu version is 22.04 or higher, you can just run
     > ```bash
     > sudo apt install qemu-system-riscv64
     > ```

@@ -72,7 +72,7 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 - **qemu-system-riscv**
     用于创建 RISC-V 虚拟机。
     > **提示**
-    > 若你的 Ubuntu 系统版本为 22.04，直接执行以下命令即可：
+    > 若你的 Ubuntu 系统版本为 22.04或更高，直接执行以下命令即可：
     > ```bash
     > sudo apt install qemu-system-riscv64
     > ```
