@@ -21,9 +21,13 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 
 ## 🚀 Quick start
 > [!Tip]
-> This is actually quick start for using docker to run this project, but only for **Linux** with architecture **amd64**
+> This is actually quick start for using docker to run this project, but only for
+> **Linux** with architecture **amd64**. If you are other systems or architecture, 
+> please refer to [build dokcer image](crbuild.md)
 > ```bash
 > docker pull lrisguan/lrix:latest
+> # if you are in China, you'd better run following commented command
+> # docker pull crpi-8xusg4og4floyq5u.cn-hangzhou.personal.cr.aliyuncs.com/lrisguan/lrix:latest
 > docker run -d --name lrix lrix:latest bash
 > ```
 > Then you could refer to [About](#about) and [Run](#run) part instead of compiling for long time
@@ -125,12 +129,12 @@ To run this project, you need to have belowings:
     Compiling steps
     ```bash
     docker pull `os`:latest
-    docker run -d --name osdev `os`:latest bash
+    docker run -d --name lrix `os`:latest bash
     # if you compiled riscv-toolchain on your host os
     # you may need to add more prameters to start the 
     # docker container.
     # you can start it like this:
-    # docker run -d -name osdev `os`:latest -v /opt/riscv:/opt/riscv bash
+    # docker run -d -name lrix `os`:latest -v /opt/riscv:/opt/riscv bash
     # then you enter the container with higher glibc
     # and you can compile latest qemu
     git clone https://github.com/qemu/qemu.git

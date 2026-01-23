@@ -19,12 +19,16 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 
 ## 🚀 快速开始
 > [!Tip]
-> 这实际上是一份基于 Docker 快速运行本项目的指南，但仅适用于 **amd64 架构的 Linux 系统**。
+> 这是使用 Docker 运行本项目的快速入门指南，但仅适用于架构为 **amd64** 的 **Linux** 系统。
+> 如果您使用的是其他系统或架构，请参考 [构建 Docker 镜像](crbuild.zh-CN.md)。
 > ```bash
 > docker pull lrisguan/lrix:latest
+> # 如果您在中国国内，建议运行下面这条被注释的命令
+> # docker pull crpi-8xusg4og4floyq5u.cn-hangzhou.personal.cr.aliyuncs.com/lrisguan/lrix:latest
 > docker run -d --name lrix lrix:latest bash
 > ```
-> 执行完成后，你无需耗时进行编译操作，直接参考文档的[关于](#关于)和[运行](#运行)章节即可。
+> 之后您可以参考 [About](#about) 和 [Run](#run) 部分，从而免去漫长的编译过程。
+
 
 > [!NOTE]
 > 不使用实际上是慢速开始。
