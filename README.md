@@ -178,7 +178,7 @@ Flags of [Makefile](./Makefile):
 | make TRAP_DEBUG=1 run                 | Enable trap debug logs                                          |
 
 ### Run
-> **[!Warning]**
+> [!Warning]
 > To use flag `VIRTIO=2`, your qemu version needs to be higher than 5. <br>
 > I had not tested actually the lowest supported qemu version, if you run success
 > on a lower version of qemu, let me know. Thanks!
@@ -195,7 +195,7 @@ make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
 # or you can just run the script to start the os
 ./run.sh
 ```
-> **[!Tip]**
+> [!Tip]
 > `make run` will automatically generate a disk.img for you. 
 > `make clean` only deletes object files except disk.img. 
 > So if you want to have a better control of whether to delete or create disk.img, 
