@@ -23,15 +23,15 @@ RUN apt-get update && apt-get install -y \
     libmpc3 \
     libmpfr6 \
     libgmp10 \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Install the RISC-V cross toolchain
 # extract the prebuilt archive
 RUN mkdir -p /opt \
- && cd /opt \
- && curl -L https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2026.01.09/riscv64-elf-ubuntu-22.04-gcc.tar.xz -o riscv64-elf-ubuntu-22.04-gcc.tar.xz \
- && tar -xJvf riscv64-elf-ubuntu-22.04-gcc.tar.xz \
- && rm riscv64-elf-ubuntu-22.04-gcc.tar.xz
+    && cd /opt \
+    && curl -L https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2026.01.09/riscv64-elf-ubuntu-22.04-gcc.tar.xz -o riscv64-elf-ubuntu-22.04-gcc.tar.xz \
+    && tar -xJvf riscv64-elf-ubuntu-22.04-gcc.tar.xz \
+    && rm riscv64-elf-ubuntu-22.04-gcc.tar.xz
 
 # Add RISC-V toolchain to PATH
 ENV PATH="/opt/riscv/bin:${PATH}"
@@ -40,6 +40,7 @@ WORKDIR /Lrix
 
 # Copy current directory into the image and clean up
 COPY . .
+
 RUN rm Dockerfile
 
 # Default to an interactive shell
