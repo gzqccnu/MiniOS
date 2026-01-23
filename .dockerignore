@@ -1,13 +1,14 @@
 assets/
-.git
+.git/
 .gitignore
 License
 .editorconfig
 .clang-format
+crbuild.md
+crbuild.zh-CN.md
 *.pdf
 *.tex
 *.bib
 *.log
 *.aux
 .DS_Store
-
