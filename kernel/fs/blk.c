@@ -1,18 +1,19 @@
 /**
  * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
 
 // blk.c - VirtIO-BLK driver (supports MMIO version 1 & 2)
 
-#include "blk.h"
 #include "../include/log.h"
+
+#include "blk.h"
 
 // --- Helper functions ---
 
@@ -216,6 +217,7 @@ void blk_init(void) {
   blk_virtq.used.idx = 0;
 
   printk(BLUE "[INFO]: \tblk: initialized (ver=%d)" RESET "\n", device_version);
+  OK("blk: init success");
 }
 
 int blk_read_sector(uint64_t sector, void *buf) { return blk_do_io(VIRTIO_BLK_T_IN, sector, buf); }

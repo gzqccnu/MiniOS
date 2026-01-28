@@ -82,6 +82,8 @@ void trap_init(void) {
 
   /* program first timer (small interval) */
   set_next_timer(1000000ULL);
+
+  OK("trap: init success");
 }
 
 /* C-level trap handler：parse and print trap info (debug) */

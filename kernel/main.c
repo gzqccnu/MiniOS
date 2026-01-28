@@ -24,10 +24,11 @@
 
 extern char _heap_start[]; // from linker.ld define where the heap starts
 extern char _heap_end[];   // from linker.ld define where the heap ends
+extern void user_shell(void);
 
 // kernel main function
 int kmain() {
-  extern void user_shell(void);
+
   uart_init(); // UART initialization for serial output
   trap_init(); // trap/interrupt initialization
   plic_init(); // PLIC initialization for external interrupts
@@ -38,7 +39,9 @@ int kmain() {
   scheduler_init();              // initialize process scheduler
   blk_init();                    // initialize block device (virtio-blk)
   fs_init();                     // initialize simple in-memory filesystem (later on-disk)
+
   INFO("welcome to Lrix!");
+
   // create initial user shell process
   PCB *p = proc_create("shell", (uint64_t)user_shell, 0);
   if (!p) {
@@ -50,6 +53,7 @@ int kmain() {
   /* let the kernel idle; timer interrupts will invoke scheduler */
   INFO("Enabling interrupts...");
   intr_on(); // <--- enable global interrupt switch
+
   while (1) {
     asm volatile("wfi");
   }

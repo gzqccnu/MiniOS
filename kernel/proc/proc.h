@@ -15,6 +15,7 @@
 #define _PROC_H_
 
 #include "../include/types.h"
+
 #include <stddef.h>
 
 // process state

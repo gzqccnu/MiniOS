@@ -9,7 +9,6 @@
  * Description: A scratch implemention of OS based on RISC-V
  */
 
-#include "syscall.h"
 #include "../fs/fs.h"
 #include "../include/log.h"
 #include "../include/riscv.h"
@@ -17,6 +16,9 @@
 #include "../mem/vmm.h"
 #include "../proc/proc.h"
 #include "../uart/uart.h"
+
+#include "syscall.h"
+
 #include <stdint.h>
 
 /* CLINT base used for uptime */

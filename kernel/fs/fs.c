@@ -11,10 +11,11 @@
 
 // fs.c - simple inode-based filesystem on top of virtio-blk
 
-#include "fs.h"
 #include "../include/log.h"
 #include "../string/string.h"
 #include "blk.h"
+
+#include "fs.h"
 
 extern const uint8_t README_MD[];
 extern const unsigned int README_MD_SIZE;
@@ -379,6 +380,7 @@ void fs_init(void) {
     fs_format();
   } else {
     printk(BLUE "[INFO]: \tfs: superblock loaded, magic=%x" RESET "\n", sb.magic);
+    OK("fs: init success");
   }
 }
 

@@ -11,10 +11,12 @@
 
 // uart.c - printk implementation (QEMU virt / 16550 UART)
 
-#include "uart.h"
 #include "../include/log.h"
 #include "../include/riscv.h"
 #include "../include/types.h"
+
+#include "uart.h"
+
 #include <stdarg.h>
 #include <stdint.h>
 
@@ -59,8 +61,8 @@ void uart_init(void) {
   volatile unsigned char *lcr = (volatile unsigned char *)UART_LCR;
   // Set 8 bits, no parity, 1 stop (0x03)
   *lcr = 0x03;
-  // INFO("waiting for uart init...");
-  // SUCCESS("uart init success");
+  INFO("waiting for uart init...");
+  OK("uart: init success");
 }
 
 // Simple string output, output "\r\n" when encountering '\n'

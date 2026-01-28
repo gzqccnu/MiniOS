@@ -11,12 +11,13 @@
 
 // proc.c
 
-#include "proc.h"
 #include "../include/log.h"
 #include "../include/riscv.h"
 #include "../mem/kmem.h"
 #include "../mem/vmm.h"
 #include "../string/string.h"
+
+#include "proc.h"
 
 // User heap layout (must match syscall.c)
 #define HEAP_USER_BASE 0x80400000UL
@@ -166,7 +167,7 @@ PCB *proc_create(const char *name, uint64_t entrypoint, int prior) {
 
 void scheduler_init(void) {
   if (!ready_queue) {
-    INFO("scheudler init...");
+    INFO("proc: scheudler init...");
     ready_queue = init_procqueue();
 
     // === create idle process ===
@@ -205,7 +206,8 @@ void scheduler_init(void) {
     mstatus_val |= (1ULL << 7);
     idle_proc->regstat.mstatus = mstatus_val;
 
-    INFO("Scheduler & Idle process initialized.");
+    INFO("proc: Scheduler & Idle process initialized.");
+    OK("proc: Scheduler & Idle process init success");
   }
 }
 

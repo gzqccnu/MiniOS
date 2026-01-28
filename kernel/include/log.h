@@ -11,7 +11,9 @@
 
 #ifndef _LOG_H
 #define _LOG_H
+
 #include "../uart/uart.h"
+
 // reset color
 #define RESET "\033[0m"
 
@@ -66,7 +68,7 @@
 
 // test macro
 #define ERROR(msg) printk(RED "[ERROR]: \t%s" RESET "\n", msg)
-#define SUCCESS(msg) printk(GREEN "[SUCCESS]: \t%s" RESET "\n", msg)
+#define OK(msg) printk(GREEN "[OK]:  \t\t%s" RESET "\n", msg)
 #define WARNING(msg) printk(YELLOW "[WARNING]: \t%s" RESET "\n", msg)
 #define INFO(msg) printk(BLUE "[INFO]: \t%s" RESET "\n", msg)
 

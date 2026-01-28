@@ -1,17 +1,19 @@
 /**
  * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
 
-#include "kmem.h"
 #include "../include/log.h"
 #include "../uart/uart.h"
+
+#include "kmem.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -23,7 +25,7 @@ static MemoryManager mm;
  */
 void kinit(void *heap_start, void *heap_end) {
   /* compute the size of heap */
-  INFO("Initializing Memory Manager...");
+  INFO("kmem: Initializing Memory Manager...");
   size_t heap_size = (uint8_t *)heap_end - (uint8_t *)heap_start;
 
   /* Initialize memory manager structure */
@@ -68,7 +70,8 @@ void kinit(void *heap_start, void *heap_end) {
     if (i == reserved_pages)
       break; /* Prevent unsigned integer underflow */
   }
-  INFO("Memory Manager initialized.");
+  INFO("kmem: Memory Manager initialized.");
+  OK("kmem: init success");
 }
 
 /**

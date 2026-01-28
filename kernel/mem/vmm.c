@@ -9,11 +9,12 @@
  * Description: A scratch implemention of OS based on RISC-V
  */
 
-#include "vmm.h"
 #include "../fs/blk.h" /* VIRTIO_MMIO_* */
 #include "../include/log.h"
 #include "../string/string.h"
 #include "../trap/plic.h" /* PLIC_BASE */
+
+#include "vmm.h"
 
 /*
  * RISC-V Sv39 three-level page tables
@@ -28,7 +29,7 @@
 #define SV39_VPN0(va) ((((uint64_t)(va)) >> 12) & 0x1FFULL)
 #define SV39_VPN1(va) ((((uint64_t)(va)) >> 21) & 0x1FFULL)
 #define SV39_VPN2(va) ((((uint64_t)(va)) >> 30) & 0x1FFULL)
-#define SV39_PAGE_OFFSET(va) ((uint64_t)(va)&0xFFFULL)
+#define SV39_PAGE_OFFSET(va) ((uint64_t)(va) & 0xFFFULL)
 
 /* RISC-V PTE flag bits */
 #define PTE_V (1ULL << 0)
@@ -254,10 +255,13 @@ void vmm_init(void) {
 
   /* PLIC base at 0x0c000000, map a small window. */
   map_identity_range((uint64_t)PLIC_BASE, (uint64_t)PLIC_BASE + 0x200000ULL, VMM_P_RW);
+
+  OK("vmm: init success");
 }
 
 /* Return the virtual address of the current page directory */
 vmm_pde_t *vmm_get_page_directory(void) { return kernel_pd; }
+
 void vmm_set_page_directory(vmm_pde_t *pd) {
   kernel_pd = pd;
   kernel_pd_phys = virt_to_phys(pd);

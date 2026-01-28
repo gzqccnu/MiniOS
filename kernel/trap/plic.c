@@ -1,17 +1,18 @@
 /**
  * Lrix
  * Copyright (C) 2025 lrisguan <lrisguan@outlook.com>
- * 
+ *
  * This program is released under the terms of the GNU General Public License version 2(GPLv2).
  * See https://opensource.org/licenses/GPL-2.0 for more information.
- * 
+ *
  * Project homepage: https://github.com/lrisguan/Lrix
  * Description: A scratch implemention of OS based on RISC-V
  */
 
-#include "plic.h"
 #include "../include/log.h"
 #include "../uart/uart.h"
+
+#include "plic.h"
 
 void plic_init(void) {
   int hart = 0;
@@ -31,6 +32,7 @@ void plic_init(void) {
   *(uint32_t *)PLIC_THRESHOLD(hart) = 0;
 
   printk(BLUE "[INFO]: \tplic init done, enabled IRQs 1-8" RESET "\n");
+  OK("plic: init success");
 }
 
 // Helper: tell PLIC we are claiming an interrupt (start handling)
