@@ -230,6 +230,7 @@ PCB *proc_fork(uint64_t mepc) {
     intr_on();
     return NULL;
   }
+
   memset(child, 0, sizeof(PCB));
 
   /* assign pid */
@@ -237,6 +238,7 @@ PCB *proc_fork(uint64_t mepc) {
   child->pstat = READY;
   child->prior = parent->prior;
   child->entrypoint = parent->entrypoint;
+
   /* copy name */
   for (int i = 0; i < 19 && parent->name[i]; i++)
     child->name[i] = parent->name[i];
@@ -399,11 +401,6 @@ int proc_wait_and_reap(void) {
         /* free PCB */
         printk(BLUE "[proc]: \tReaping child pid=%d: free PCB" RESET "\n", childpid);
         kfree(cur);
-
-        // If we are reclaiming the last PID in the current sequence,
-        // decrement next_pid so it can be reused
-        if (childpid == next_pid - 1 && next_pid > 1)
-          next_pid--;
 
         intr_on();
         return childpid;
