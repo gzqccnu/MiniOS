@@ -1,4 +1,10 @@
-# Lrix
+<p align="center">
+<img src="./assets/lrix.png"></img>
+</p>
+
+<h3 align="center">
+Lrix
+</h3>
 
 <p align="center">
 <a href="README.md"><b>English</b></a> | <a ><b>中文</b></a>
