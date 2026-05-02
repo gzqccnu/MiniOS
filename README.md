@@ -193,8 +193,8 @@ Flags of [Makefile](./Makefile):
 > system qemu and it works well.
 
 ```bash
-git clone https://github.com/lrisguan/Lrix.git
-cd Lrix
+git clone https://github.com/lrisguan/lrix.git
+cd lrix
 # execute `make info` to see the flags and help.
 # to run the os:
 make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0

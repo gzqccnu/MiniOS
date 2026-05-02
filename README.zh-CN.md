@@ -189,8 +189,8 @@ https://github.com/user-attachments/assets/a500f8f4-6f2b-42ed-9ab6-f23aaa7f8497
 > 事实上，经过测试，**6.2.0**版本即可。对于 Ubuntu 22.04，你只需要安装系统 qemu。
 
 ```bash
-git clone https://github.com/lrisguan/Lrix.git 
-cd Lrix
+git clone https://github.com/lrisguan/lrix.git 
+cd lrix
 # 执行 `make info` 查看标志和帮助信息。
 # 运行操作系统：
 make run # VIRTIO=1, FS_DEBUG=0, TRAP_DEBUG=0
