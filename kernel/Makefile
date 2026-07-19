@@ -30,7 +30,7 @@ BUILD_DIR ?= build
 # make DIR="dir1 dir2 ..." run
 # to run the system
 
-CFLAGS   = -Wall -O2 -nostdlib -fno-builtin -fno-stack-protector \
+CFLAGS   = -w -O2 -nostdlib -fno-builtin -fno-stack-protector \
 			-mcmodel=medany $(addprefix -I, $(INC_DIRS)) \
 			-DTRAP_DEBUG=$(TRAP_DEBUG)
 			
@@ -77,7 +77,7 @@ endif
 # ---------- Include paths ----------
 INC_DIRS := include .
 
-LDFLAGS  := -T linker.ld -nostdlib
+LDFLAGS  := -T linker.ld -nostdlib -flto
 
 # ---------- Targets ----------
 TARGET   := kernel
@@ -204,6 +204,7 @@ info:
 clean:
 	@echo "  [CLEAN]"
 	rm -rf $(BUILD_DIR)
+	rm -f disk.img
 	@# user-space sources stay under ../usr; only build outputs under $(BUILD_DIR) are removed
 
 # ==========================================================
